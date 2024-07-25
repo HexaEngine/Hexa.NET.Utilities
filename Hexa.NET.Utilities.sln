@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35027.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hexa.NET.Utilities", "Hexa.NET.Utilities\Hexa.NET.Utilities.csproj", "{055E63D3-810C-4289-97D4-E27BCDB86548}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{055E63D3-810C-4289-97D4-E27BCDB86548}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{055E63D3-810C-4289-97D4-E27BCDB86548}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{055E63D3-810C-4289-97D4-E27BCDB86548}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{055E63D3-810C-4289-97D4-E27BCDB86548}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {33E217DF-77B4-4AE7-8F53-548592C9A6DD}
+	EndGlobalSection
+EndGlobal
