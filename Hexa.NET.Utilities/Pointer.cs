@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Core.Unsafes
+﻿namespace Hexa.NET.Utilities
 {
     using System;
 
@@ -88,18 +88,18 @@
         public static implicit operator Pointer(void* pointer) => new Pointer(pointer);
 
         /// <summary>
-        /// Implicitly converts a <see cref="Pointer"/> to an <see cref="IntPtr"/>.
+        /// Implicitly converts a <see cref="Pointer"/> to an <see cref="nint"/>.
         /// </summary>
         /// <param name="pointer">The <see cref="Pointer"/> to convert.</param>
-        /// <returns>The converted <see cref="IntPtr"/>.</returns>
-        public static implicit operator IntPtr(Pointer pointer) => (IntPtr)pointer.Data;
+        /// <returns>The converted <see cref="nint"/>.</returns>
+        public static implicit operator nint(Pointer pointer) => (nint)pointer.Data;
 
         /// <summary>
-        /// Implicitly converts an <see cref="IntPtr"/> to a <see cref="Pointer"/>.
+        /// Implicitly converts an <see cref="nint"/> to a <see cref="Pointer"/>.
         /// </summary>
-        /// <param name="pointer">The <see cref="IntPtr"/> to convert.</param>
+        /// <param name="pointer">The <see cref="nint"/> to convert.</param>
         /// <returns>The converted <see cref="Pointer"/>.</returns>
-        public static implicit operator Pointer(IntPtr pointer) => new Pointer((void*)pointer);
+        public static implicit operator Pointer(nint pointer) => new Pointer((void*)pointer);
 
         /// <summary>
         /// Returns the hash code for the <see cref="Pointer"/>.
@@ -107,7 +107,7 @@
         /// <returns>The hash code for the <see cref="Pointer"/>.</returns>
         public override readonly int GetHashCode()
         {
-            return ((IntPtr)Data).GetHashCode();
+            return ((nint)Data).GetHashCode();
         }
     }
 
@@ -229,11 +229,11 @@
         public static implicit operator Pointer<T>(T* pointer) => new Pointer<T>(pointer);
 
         /// <summary>
-        /// Implicitly converts an <see cref="IntPtr"/> to a <see cref="Pointer{T}"/>.
+        /// Implicitly converts an <see cref="nint"/> to a <see cref="Pointer{T}"/>.
         /// </summary>
-        /// <param name="pointer">The <see cref="IntPtr"/> to convert.</param>
+        /// <param name="pointer">The <see cref="nint"/> to convert.</param>
         /// <returns>The converted <see cref="Pointer{T}"/>.</returns>
-        public static implicit operator Pointer<T>(IntPtr pointer) => new Pointer<T>((T*)pointer);
+        public static implicit operator Pointer<T>(nint pointer) => new Pointer<T>((T*)pointer);
 
         /// <summary>
         /// Implicitly converts a <see cref="Pointer"/> to a <see cref="Pointer{T}"/>.
@@ -255,7 +255,7 @@
         /// <returns>The hash code for the <see cref="Pointer{T}"/>.</returns>
         public override readonly int GetHashCode()
         {
-            return ((IntPtr)Data).GetHashCode();
+            return ((nint)Data).GetHashCode();
         }
     }
 }

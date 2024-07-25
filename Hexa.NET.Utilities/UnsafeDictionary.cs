@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Unsafes
+﻿namespace Hexa.NET.Utilities
 {
     using System.Collections;
 
@@ -20,7 +20,7 @@
         private const float loadFactor = 0.75f;
         private const int HashMask = 0x3FFFFFFF;
         private const int EmptyHashCode = unchecked((int)0x80000000);
-        private const int TombstoneHashCode = unchecked((int)0x40000000);
+        private const int TombstoneHashCode = unchecked(0x40000000);
         private const int SpecialBitsMask = unchecked((int)0xC0000000);
 
         public UnsafeDictionary(int initialCapacity)

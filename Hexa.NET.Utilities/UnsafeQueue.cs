@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Core.Unsafes
+﻿namespace Hexa.NET.Utilities
 {
     using System;
     using System.Runtime.CompilerServices;

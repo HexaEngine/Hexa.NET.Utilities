@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Core.Unsafes
+﻿namespace Hexa.NET.Utilities
 {
     using System;
     using System.Runtime.CompilerServices;
@@ -11,6 +11,6 @@
         /// <summary>
         /// Gets the native pointer associated with the object.
         /// </summary>
-        IntPtr NativePointer { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+        nint NativePointer { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
     }
 }

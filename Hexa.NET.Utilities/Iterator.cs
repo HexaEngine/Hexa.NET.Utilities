@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Core.Unsafes
+﻿namespace Hexa.NET.Utilities
 {
     /// <summary>
     /// Represents an iterator over a list of values.

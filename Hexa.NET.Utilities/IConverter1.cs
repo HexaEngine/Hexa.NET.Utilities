@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Core
+﻿namespace Hexa.NET.Utilities
 {
     public interface IConverter<TIn, TOut>
     {

@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Core.Unsafes
+﻿namespace Hexa.NET.Utilities
 {
     using System;
 
@@ -37,10 +37,10 @@
         public static implicit operator PointerPointer<T>(T** pointer) => new PointerPointer<T>(pointer);
 
         /// <summary>
-        /// Implicitly converts an <see cref="IntPtr"/> to a <see cref="PointerPointer{T}"/>.
+        /// Implicitly converts an <see cref="nint"/> to a <see cref="PointerPointer{T}"/>.
         /// </summary>
-        /// <param name="pointer">The <see cref="IntPtr"/> to convert.</param>
+        /// <param name="pointer">The <see cref="nint"/> to convert.</param>
         /// <returns>The converted <see cref="PointerPointer{T}"/>.</returns>
-        public static implicit operator PointerPointer<T>(IntPtr pointer) => new PointerPointer<T>((T**)pointer);
+        public static implicit operator PointerPointer<T>(nint pointer) => new PointerPointer<T>((T**)pointer);
     }
 }

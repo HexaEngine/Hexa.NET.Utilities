@@ -1,6 +1,5 @@
-﻿namespace HexaEngine.Core
+﻿namespace Hexa.NET.Utilities
 {
-    using HexaEngine.Core.Unsafes;
     using System;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
@@ -185,9 +184,9 @@
         public static uint Bitcount(this uint value)
         {
             uint v = value;
-            v -= ((v >> 1) & 0x55555555); // reuse input as temporary
-            v = (v & 0x33333333) + ((v >> 2) & 0x33333333); // temp
-            uint c = ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24; // count
+            v -= v >> 1 & 0x55555555; // reuse input as temporary
+            v = (v & 0x33333333) + (v >> 2 & 0x33333333); // temp
+            uint c = (v + (v >> 4) & 0xF0F0F0F) * 0x1010101 >> 24; // count
             return c;
         }
 
@@ -609,7 +608,7 @@
 #endif
             ) where T : unmanaged
         {
-            T* result = (T*)allocator.Alloc((nint)(sizeof(T) * count)
+            T* result = (T*)allocator.Alloc(sizeof(T) * count
 #if TRACELEAK
                 , $"File: {file}, Line: {line}"
 #endif

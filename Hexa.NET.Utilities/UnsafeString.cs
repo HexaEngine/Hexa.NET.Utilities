@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Core.Unsafes
+﻿namespace Hexa.NET.Utilities
 {
     using System.Runtime.InteropServices;
     using System.Text;
@@ -109,7 +109,7 @@
         /// </summary>
         public readonly void Release()
         {
-            Utils.Free(Ptr);
+            Free(Ptr);
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿namespace HexaEngine.Core
+﻿namespace Hexa.NET.Utilities
 {
     using System.Collections.Concurrent;
 

@@ -14,7 +14,7 @@
 	<PropertyGroup>
 		<PackageId>Hexa.NET.Utilities</PackageId>
 		<AssemblyVersion>1.0.0</AssemblyVersion>
-		<PackageVersion>1.0.0</PackageVersion>
+		<PackageVersion>2.0.0</PackageVersion>
 		<Authors>Juna</Authors>
 		<AssemblyName>Hexa.NET.Utilities</AssemblyName>
 		<PackageProjectUrl>https://github.com/HexaEngine/Hexa.NET.Utilities</PackageProjectUrl>
