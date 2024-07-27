@@ -118,7 +118,16 @@
         /// <param name="ptr">The UnsafeUTF8String to convert.</param>
         public static implicit operator string(UnsafeString ptr)
         {
+#if NET8_0_OR_GREATER
             return Encoding.UTF8.GetString(MemoryMarshal.CreateReadOnlySpanFromNullTerminated(ptr.Ptr));
+#else
+            int len = 0;
+            while (ptr.Ptr[len] != 0)
+            {
+                len++;
+            }
+            return Encoding.UTF8.GetString(ptr.Ptr, len);
+#endif
         }
 
         /// <summary>

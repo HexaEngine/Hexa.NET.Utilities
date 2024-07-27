@@ -256,8 +256,15 @@
         /// <returns>The byte at the specified index.</returns>
         public byte At(int index)
         {
+#if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfNegative(index);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, size);
+#else
+            if (index < 0 || index >= size)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+#endif
             return this[index];
         }
 

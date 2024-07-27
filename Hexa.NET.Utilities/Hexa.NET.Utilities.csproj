@@ -1,20 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFrameworks>net8.0;netstandard2.1</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<LangVersion>12</LangVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		<IsAotCompatible>true</IsAotCompatible>
 		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
 		<EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
 		<EnableAotAnalyzer>true</EnableAotAnalyzer>
-		<IsAotCompatible>true</IsAotCompatible>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<PackageId>Hexa.NET.Utilities</PackageId>
 		<AssemblyVersion>1.0.0</AssemblyVersion>
-		<PackageVersion>2.0.0</PackageVersion>
+		<PackageVersion>2.0.1</PackageVersion>
 		<Authors>Juna</Authors>
 		<AssemblyName>Hexa.NET.Utilities</AssemblyName>
 		<PackageProjectUrl>https://github.com/HexaEngine/Hexa.NET.Utilities</PackageProjectUrl>
@@ -29,6 +33,10 @@
 	<ItemGroup>
 		<Content Include="../LICENSE.txt" Pack="true" PackagePath="\" />
 		<Content Include="../README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="System.Memory" Version="4.5.5" />
 	</ItemGroup>
 
 </Project>

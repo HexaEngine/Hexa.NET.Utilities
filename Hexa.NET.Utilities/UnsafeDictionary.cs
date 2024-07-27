@@ -1,5 +1,6 @@
 ﻿namespace Hexa.NET.Utilities
 {
+    using System;
     using System.Collections;
 
     public unsafe struct UnsafeDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
@@ -288,10 +289,21 @@
 
         public readonly void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(array);
-
             ArgumentOutOfRangeException.ThrowIfNegative(arrayIndex);
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(array.Length - arrayIndex, size);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(array.Length - arrayIndex, size);
+#else
+            if (array == null)
+            {
+                throw new ArgumentNullException();
+            }
+            int len = array.Length - arrayIndex;
+            if (arrayIndex < 0 || array.Length - arrayIndex >= size)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+#endif
 
             foreach (var pair in this)
             {

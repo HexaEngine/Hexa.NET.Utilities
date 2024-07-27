@@ -191,8 +191,15 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T At(uint index)
         {
+#if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfNegative(index);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, size);
+#else
+            if (index < 0 || index >= size)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+#endif
             return this[index];
         }
 
@@ -204,8 +211,15 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T At(int index)
         {
+#if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfNegative(index);
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, size);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, (int)size);
+#else
+            if (index < 0 || index >= size)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+#endif
             return this[index];
         }
 
@@ -589,6 +603,8 @@
             size = list.size;
         }
 
+#if NET8_0_OR_GREATER
+
         /// <summary>
         /// Atomically increments the counter value and returns the result.
         /// </summary>
@@ -644,6 +660,8 @@
         {
             return Interlocked.Exchange(ref size, newSize);
         }
+
+#endif
 
         /// <summary>
         /// Returns an enumerator that iterates through the elements of the <see cref="UnsafeList{T}"/>.
