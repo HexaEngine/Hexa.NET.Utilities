@@ -2,27 +2,70 @@
 {
     using System;
     using System.Collections;
+    using System.Runtime.CompilerServices;
 
-    public unsafe struct UnsafeDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
+    public unsafe struct UnsafeDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>, IEquatable<UnsafeDictionary<TKey, TValue>> where TKey : unmanaged where TValue : unmanaged
     {
+        private enum EntryFlags : byte
+        {
+            Empty = 0,
+            Tombstone = 1,
+            Filled = 2
+        }
+
         private struct Entry
         {
             public int HashCode;
             public TKey Key;
             public TValue Value;
+            public EntryFlags Flags;
 
-            public static readonly Entry Empty = new() { HashCode = EmptyHashCode };
-            public static readonly Entry Tombstone = new() { HashCode = TombstoneHashCode };
+            public Entry(int hashCode, TKey key, TValue value, EntryFlags flags)
+            {
+                HashCode = hashCode;
+                Key = key;
+                Value = value;
+                Flags = flags;
+            }
+
+            public static Entry Empty => new(0, default, default, EntryFlags.Empty);
+
+            public static Entry Tombstone => new(0, default, default, EntryFlags.Tombstone);
+
+            public readonly bool IsEmpty
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    return Flags == EntryFlags.Empty;
+                }
+            }
+
+            public readonly bool IsTombstone
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    return Flags == EntryFlags.Tombstone;
+                }
+            }
+
+            public readonly bool IsFilled
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    return Flags == EntryFlags.Filled;
+                }
+            }
         }
 
         private Entry* buckets;
         private int capacity;
         private int size;
+        private delegate*<TKey, TKey, bool> comparer;
+
         private const float loadFactor = 0.75f;
-        private const int HashMask = 0x3FFFFFFF;
-        private const int EmptyHashCode = unchecked((int)0x80000000);
-        private const int TombstoneHashCode = unchecked(0x40000000);
-        private const int SpecialBitsMask = unchecked((int)0xC0000000);
 
         public UnsafeDictionary(int initialCapacity)
         {
@@ -30,10 +73,58 @@
             size = 0;
         }
 
+        public UnsafeDictionary(int initialCapacity, delegate*<TKey, TKey, bool> comparer)
+        {
+            Capacity = initialCapacity;
+            size = 0;
+            this.comparer = comparer;
+        }
+
+        public UnsafeDictionary(IEnumerable<KeyValuePair<TKey, TValue>> keyValuePairs)
+        {
+            if (keyValuePairs is UnsafeDictionary<TKey, TValue> dictionary)
+            {
+                this = dictionary.Clone();
+                return;
+            }
+
+            if (keyValuePairs is ICollection<KeyValuePair<TKey, TValue>> collection)
+            {
+                Capacity = collection.Count;
+            }
+
+            foreach (var pair in keyValuePairs)
+            {
+                Add(pair.Key, pair.Value);
+            }
+
+            TrimExcess();
+        }
+
+        public UnsafeDictionary(IEnumerable<KeyValuePair<TKey, TValue>> keyValuePairs, delegate*<TKey, TKey, bool> comparer)
+        {
+            this.comparer = comparer;
+
+            if (keyValuePairs is ICollection<KeyValuePair<TKey, TValue>> collection)
+            {
+                Capacity = collection.Count;
+            }
+
+            foreach (var pair in keyValuePairs)
+            {
+                Add(pair.Key, pair.Value);
+            }
+
+            TrimExcess();
+        }
+
         public void Release()
         {
-            Clear();
-            Free(buckets);
+            if (buckets != null)
+            {
+                Free(buckets);
+                this = default;
+            }
         }
 
         public int Capacity
@@ -46,39 +137,41 @@
                     throw new InvalidOperationException("Cannot reduce capacity below current size");
                 }
 
-                if (value != capacity)
+                if (value == capacity)
                 {
-                    Entry* newBuckets = AllocT<Entry>(value);
-                    MemsetT(newBuckets, Entry.Empty, capacity);
-
-                    if (size > 0)
-                    {
-                        for (int i = 0; i < capacity; i++)
-                        {
-                            Entry* entry = &buckets[i];
-                            if ((entry->HashCode & SpecialBitsMask) != 0) continue;
-                            Entry* dest = FindEntry(newBuckets, capacity, entry->HashCode);
-                            *dest = *entry;
-                        }
-                    }
-
-                    Free(buckets);
-                    buckets = newBuckets;
-                    capacity = value;
+                    return;
                 }
+
+                Entry* newBuckets = AllocT<Entry>(value);
+                MemsetT(newBuckets, Entry.Empty, value);
+
+                if (size > 0)
+                {
+                    for (int i = 0; i < capacity; i++)
+                    {
+                        Entry* entry = &buckets[i];
+                        if (!entry->IsFilled) continue;
+                        Entry* dest = FindEntry(newBuckets, value, entry->Key, entry->HashCode);
+                        *dest = *entry;
+                    }
+                }
+
+                Free(buckets);
+                buckets = newBuckets;
+                capacity = value;
             }
         }
 
-        private static Entry* FindEntry(Entry* entries, int capacity, int hashCode)
+        private readonly Entry* FindEntry(Entry* entries, int capacity, TKey key, int hashCode)
         {
             Entry* tombstone = null;
             int index = hashCode % capacity;
             while (true)
             {
                 Entry* entry = &entries[index];
-                if ((entry->HashCode & SpecialBitsMask) != 0)
+                if (!entry->IsFilled)
                 {
-                    if (entry->HashCode == EmptyHashCode)
+                    if (entry->IsEmpty)
                     {
                         // Empty entry.
                         return tombstone != null ? tombstone : entry;
@@ -92,7 +185,7 @@
                         }
                     }
                 }
-                else if (entry->HashCode == hashCode)
+                else if (entry->HashCode == hashCode && Compare(entry->Key, key))
                 {
                     // We found the key.
                     return entry;
@@ -102,6 +195,16 @@
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private readonly bool Compare(TKey x, TKey y)
+        {
+            if (comparer == null)
+            {
+                return EqualityComparer<TKey>.Default.Equals(x, y);
+            }
+            return comparer(x, y);
+        }
+
         public void Grow(int capacity)
         {
             Capacity = capacity * 2;
@@ -109,23 +212,26 @@
 
         public void EnsureCapacity(int capacity)
         {
-            if (capacity * loadFactor > this.capacity)
+            if (capacity > this.capacity * loadFactor)
             {
                 Grow(capacity);
             }
+        }
+
+        public void TrimExcess()
+        {
+            Capacity = size;
         }
 
         public void Add(TKey key, TValue value)
         {
             EnsureCapacity(size + 1);
 
-            int hashCode = key.GetHashCode() & HashMask;
+            int hashCode = key.GetHashCode();
 
-            Entry* entry = FindEntry(buckets, capacity, hashCode);
+            Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
-            bool isNewKey = entry->HashCode == EmptyHashCode;
-
-            if (!isNewKey)
+            if (entry->IsFilled)
             {
                 throw new ArgumentException("Key already exists in the dictionary");
             }
@@ -133,6 +239,7 @@
             entry->HashCode = hashCode;
             entry->Key = key;
             entry->Value = value;
+            entry->Flags = EntryFlags.Filled;
 
             size++;
         }
@@ -141,11 +248,11 @@
         {
             EnsureCapacity(size + 1);
 
-            int hashCode = key.GetHashCode() & HashMask;
+            int hashCode = key.GetHashCode();
 
-            Entry* entry = FindEntry(buckets, capacity, hashCode);
+            Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
-            bool isNewKey = entry->HashCode == EmptyHashCode;
+            bool isNewKey = !entry->IsFilled;
 
             if (isNewKey)
             {
@@ -155,13 +262,14 @@
             entry->HashCode = hashCode;
             entry->Key = key;
             entry->Value = value;
+            entry->Flags = EntryFlags.Filled;
         }
 
         public readonly bool ContainsKey(TKey key)
         {
-            int hashCode = key.GetHashCode() & HashMask;
-            Entry* entry = FindEntry(buckets, capacity, hashCode);
-            return entry->HashCode != EmptyHashCode;
+            int hashCode = key.GetHashCode();
+            Entry* entry = FindEntry(buckets, capacity, key, hashCode);
+            return entry->HashCode == hashCode;
         }
 
         public bool Remove(TKey key)
@@ -171,10 +279,10 @@
                 return false;
             }
 
-            int hashCode = key.GetHashCode() & HashMask;
-            Entry* entry = FindEntry(buckets, capacity, hashCode);
+            int hashCode = key.GetHashCode();
+            Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
-            if (entry->HashCode == EmptyHashCode)
+            if (!entry->IsFilled)
             {
                 return false;
             }
@@ -182,7 +290,7 @@
             *entry = Entry.Tombstone;
             size--;
 
-            return false;
+            return true;
         }
 
         public readonly bool TryGetValue(TKey key, out TValue value)
@@ -193,10 +301,10 @@
                 return false;
             }
 
-            int hashCode = key.GetHashCode() & HashMask;
-            Entry* entry = FindEntry(buckets, capacity, hashCode);
+            int hashCode = key.GetHashCode();
+            Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
-            if (entry->HashCode == EmptyHashCode)
+            if (!entry->IsFilled)
             {
                 value = default;
                 return false;
@@ -220,7 +328,7 @@
                 for (int i = 0; i < capacity; i++)
                 {
                     Entry* current = &buckets[i];
-                    if (current->HashCode == EmptyHashCode)
+                    if (!current->IsFilled)
                     {
                         continue;
                     }
@@ -239,7 +347,7 @@
                 for (int i = 0; i < capacity; i++)
                 {
                     Entry* current = &buckets[i];
-                    if (current->HashCode == EmptyHashCode)
+                    if (!current->IsFilled)
                     {
                         continue;
                     }
@@ -354,7 +462,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.size)
+                if (itemIndex >= dictionary.capacity - 1)
                 {
                     return false;
                 }
@@ -362,7 +470,7 @@
                 for (int i = index; i < dictionary.capacity; i++)
                 {
                     Entry* entry = &dictionary.buckets[i];
-                    if ((entry->HashCode & SpecialBitsMask) != 0)
+                    if (!entry->IsFilled)
                     {
                         continue;
                     }
@@ -428,7 +536,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.size)
+                if (itemIndex >= dictionary.capacity - 1)
                 {
                     return false;
                 }
@@ -436,7 +544,7 @@
                 for (int i = index; i < dictionary.capacity; i++)
                 {
                     Entry* entry = &dictionary.buckets[i];
-                    if ((entry->HashCode & SpecialBitsMask) != 0)
+                    if (!entry->IsFilled)
                     {
                         continue;
                     }
@@ -502,7 +610,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.size)
+                if (itemIndex >= dictionary.capacity - 1)
                 {
                     return false;
                 }
@@ -510,7 +618,7 @@
                 for (int i = index; i < dictionary.capacity; i++)
                 {
                     Entry* entry = &dictionary.buckets[i];
-                    if ((entry->HashCode & SpecialBitsMask) != 0)
+                    if (!entry->IsFilled)
                     {
                         continue;
                     }
@@ -540,6 +648,52 @@
         readonly IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is UnsafeDictionary<TKey, TValue> dictionary && Equals(dictionary);
+        }
+
+        public readonly bool Equals(UnsafeDictionary<TKey, TValue> other)
+        {
+            return (buckets == other.buckets);
+        }
+
+        public override readonly int GetHashCode()
+        {
+            return ((nint)buckets).GetHashCode();
+        }
+
+        public static bool operator ==(UnsafeDictionary<TKey, TValue> left, UnsafeDictionary<TKey, TValue> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(UnsafeDictionary<TKey, TValue> left, UnsafeDictionary<TKey, TValue> right)
+        {
+            return !(left == right);
+        }
+
+        public static bool operator ==(IEnumerable<KeyValuePair<TKey, TValue>> left, UnsafeDictionary<TKey, TValue> right)
+        {
+            return left is UnsafeDictionary<TKey, TValue> set && set == right;
+        }
+
+        public static bool operator !=(IEnumerable<KeyValuePair<TKey, TValue>> left, UnsafeDictionary<TKey, TValue> right)
+        {
+            return !(left == right);
+        }
+
+        public readonly UnsafeDictionary<TKey, TValue> Clone()
+        {
+            UnsafeDictionary<TKey, TValue> result;
+            result.capacity = capacity;
+            result.buckets = AllocT<Entry>(capacity);
+            result.size = size;
+            result.comparer = comparer;
+            MemcpyT(buckets, result.buckets, capacity);
+            return result;
         }
     }
 }

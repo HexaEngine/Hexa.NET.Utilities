@@ -8,11 +8,13 @@
     /// <summary>
     /// Utilities for allocation, freeing, reallocating, moving, copying native memory and conversation from managed to unmanaged.
     /// </summary>
-    public static unsafe class Utils
+    public static unsafe partial class Utils
     {
         private static IAllocationCallbacks allocator = new AllocationCallbacks();
 
         public static IAllocationCallbacks Allocator { get => allocator; set => allocator = value; }
+
+        public const int StackAllocLimit = 2048;
 
         /// <summary>
         /// Swaps the memory content between two pointers of the specified size.
@@ -412,7 +414,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemoryT<T>(T* pointer) where T : unmanaged
         {
-            new Span<byte>(pointer, sizeof(T)).Clear();
+            Unsafe.InitBlock(pointer, 0, (uint)sizeof(T));
         }
 
         /// <summary>
@@ -424,7 +426,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemoryT<T>(T* pointer, int length) where T : unmanaged
         {
-            new Span<byte>(pointer, sizeof(T) * length).Clear();
+            ZeroMemoryT(pointer, sizeof(T) * length);
         }
 
         /// <summary>
@@ -447,11 +449,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemory(void* pointer, uint size)
         {
-            byte* pointerCopy = (byte*)pointer;
-            for (uint i = 0; i < size; i++)
-            {
-                pointerCopy[i] = 0;
-            }
+            Unsafe.InitBlock(pointer, 0, size);
         }
 
         /// <summary>
@@ -462,7 +460,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemory(void* pointer, int size)
         {
-            new Span<byte>(pointer, size).Clear();
+            Unsafe.InitBlock(pointer, 0, (uint)size);
         }
 
         /// <summary>
@@ -473,10 +471,15 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemory(void* pointer, ulong size)
         {
-            byte* pointerCopy = (byte*)pointer;
-            for (ulong i = 0; i < size; i++)
+            while (size > uint.MaxValue)
             {
-                pointerCopy[i] = 0;
+                Unsafe.InitBlock(pointer, 0, uint.MaxValue);
+                size -= uint.MaxValue;
+            }
+
+            if (size > 0)
+            {
+                Unsafe.InitBlock(pointer, 0, (uint)size);
             }
         }
 
@@ -488,10 +491,15 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemory(void* pointer, long size)
         {
-            byte* pointerCopy = (byte*)pointer;
-            for (long i = 0; i < size; i++)
+            while (size > uint.MaxValue)
             {
-                pointerCopy[i] = 0;
+                Unsafe.InitBlock(pointer, 0, uint.MaxValue);
+                size -= uint.MaxValue;
+            }
+
+            if (size > 0)
+            {
+                Unsafe.InitBlock(pointer, 0, (uint)size);
             }
         }
 
@@ -503,10 +511,13 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemory(void* pointer, nint size)
         {
-            byte* pointerCopy = (byte*)pointer;
-            for (nint i = 0; i < size; i++)
+            if (sizeof(nint) == 8)
             {
-                pointerCopy[i] = 0;
+                ZeroMemory(pointer, (long)size);
+            }
+            else
+            {
+                ZeroMemory(pointer, (int)size);
             }
         }
 
@@ -1147,132 +1158,6 @@
         public static void Free(void** pointer)
         {
             allocator.Free(pointer);
-        }
-
-        /// <summary>
-        /// Compares the data of two pointers.
-        /// </summary>
-        /// <param name="a">a.</param>
-        /// <param name="b">The b.</param>
-        /// <param name="length">The length.</param>
-        /// <returns>true if the data matches the other, otherwise false.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe bool Compare(byte* a, byte* b, uint length)
-        {
-            Span<byte> aSpan = new(a, (int)length);
-            Span<byte> bSpan = new(b, (int)length);
-            return aSpan.SequenceEqual(bSpan);
-        }
-
-        /// <summary>
-        /// Compares the data of two pointers.
-        /// </summary>
-        /// <param name="a">a.</param>
-        /// <param name="b">The b.</param>
-        /// <param name="length">The length.</param>
-        /// <returns>true if the data matches the other, otherwise false.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe bool Compare(char* a, char* b, uint length)
-        {
-            Span<char> spanA = new(a, (int)length);
-            Span<char> spanB = new(b, (int)length);
-            return spanA.SequenceEqual(spanB);
-        }
-
-        /// <summary>
-        /// Compares two strings.
-        /// </summary>
-        /// <param name="a">a.</param>
-        /// <param name="b">b.</param>
-        /// <returns>true if the data matches the other, otherwise false.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe bool StringCompare(char* a, char* b)
-        {
-            int n1 = StringSizeNullTerminated(a);
-            int n2 = StringSizeNullTerminated(b);
-            ReadOnlySpan<char> chars1 = new(a, n1);
-            ReadOnlySpan<char> chars2 = new(b, n2);
-            if (n1 != n2)
-            {
-                return false;
-            }
-
-            return chars1.SequenceEqual(chars2);
-        }
-
-        /// <summary>
-        /// Compares two strings.
-        /// </summary>
-        /// <param name="a">a.</param>
-        /// <param name="b">b.</param>
-        /// <returns>true if the data matches the other, otherwise false.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe bool StringCompare(char* a, string b)
-        {
-            int n1 = StringSizeNullTerminated(a);
-            int n2 = StringSizeNullTerminated(b);
-            ReadOnlySpan<char> chars1 = new(a, n1);
-            fixed (char* bp = b)
-            {
-                ReadOnlySpan<char> chars2 = new(bp, n2);
-                if (n1 != n2)
-                {
-                    return false;
-                }
-
-                return chars1.SequenceEqual(chars2);
-            }
-        }
-
-        /// <summary>
-        /// Returns the size of the null terminated string.
-        /// </summary>
-        /// <param name="str">The string.</param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int StringSizeNullTerminated(char* str)
-        {
-            int ret = 0;
-            while (str[ret] != '\0')
-            {
-                ret++;
-            }
-
-            return (ret + 1) * 2;
-        }
-
-        /// <summary>
-        /// Returns the size of the null terminated string.
-        /// </summary>
-        /// <param name="str">The string.</param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int StringSizeNullTerminated(ReadOnlySpan<char> str)
-        {
-            int ret = 0;
-            while (str[ret] != '\0')
-            {
-                ret++;
-            }
-
-            return (ret + 1) * 2;
-        }
-
-        /// <summary>
-        /// Returns the size of the null terminated string.
-        /// </summary>
-        /// <param name="str">The string.</param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int StringSizeNullTerminated(byte* str)
-        {
-            int ret = 0;
-            while (str[ret] != (byte)'\0')
-            {
-                ret++;
-            }
-
-            return ret;
         }
 
         /// <summary>

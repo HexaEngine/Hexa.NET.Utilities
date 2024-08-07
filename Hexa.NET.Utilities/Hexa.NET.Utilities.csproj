@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>12</LangVersion>
+		<Platforms>AnyCPU;x86</Platforms>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
@@ -18,7 +19,7 @@
 	<PropertyGroup>
 		<PackageId>Hexa.NET.Utilities</PackageId>
 		<AssemblyVersion>1.0.0</AssemblyVersion>
-		<PackageVersion>2.0.1</PackageVersion>
+		<PackageVersion>2.1.0</PackageVersion>
 		<Authors>Juna</Authors>
 		<AssemblyName>Hexa.NET.Utilities</AssemblyName>
 		<PackageProjectUrl>https://github.com/HexaEngine/Hexa.NET.Utilities</PackageProjectUrl>

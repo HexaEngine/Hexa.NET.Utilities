@@ -46,12 +46,14 @@
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
-                var tmp = AllocT<T>(value);
-                var oldsize = size * sizeof(T);
-                var newsize = value * sizeof(T);
-                Buffer.MemoryCopy(data, tmp, newsize, oldsize > newsize ? newsize : oldsize);
-                Free(data);
-                data = tmp;
+                if (data == null)
+                {
+                    data = AllocT<T>(value);
+                    capacity = value;
+                    return;
+                }
+
+                data = ReAllocT(data, value);
                 capacity = value;
                 size = capacity < size ? capacity : size;
             }
