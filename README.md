@@ -13,7 +13,7 @@ The library is tailored to HexaEngine, but can be still used in other projects, 
   - `Array` (comming soon)
   - `List` (UnsafeList)
   - `Map` (UnsafeDictionary)
-  - `Set` (comming soon)
+  - `Set` (UnsafeHashSet)
   - `Queue` (UnsafeQueue)
   - `Stack` (UnsafeStack)
 
