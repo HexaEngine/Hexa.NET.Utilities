@@ -10,7 +10,6 @@ The library is tailored to HexaEngine, but can be still used in other projects, 
   - `StdWString` (UTF-16)
   - `StdString` (UTF-8)
 - **Standard-like Containers**:
-  - `Array` (comming soon)
   - `List` (UnsafeList)
   - `Map` (UnsafeDictionary)
   - `Set` (UnsafeHashSet)
