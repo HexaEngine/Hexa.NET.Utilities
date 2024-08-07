@@ -385,6 +385,19 @@
         /// </summary>
         /// <param name="src">Pointer to the source memory.</param>
         /// <param name="dst">Pointer to the destination memory.</param>
+        /// <param name="dstLength">Length of the destination memory to copy to.</param>
+        /// <param name="srcLength">Length of the source memory to copy from.</param>
+        /// <typeparam name="T">Type of elements to copy.</typeparam>
+        public static void MemcpyT<T>(T* src, T* dst, nint dstLength, nint srcLength) where T : unmanaged
+        {
+            Buffer.MemoryCopy(src, dst, dstLength * sizeof(T), srcLength * sizeof(T));
+        }
+
+        /// <summary>
+        /// Copies memory from the source to the destination with the same length for both source and destination.
+        /// </summary>
+        /// <param name="src">Pointer to the source memory.</param>
+        /// <param name="dst">Pointer to the destination memory.</param>
         /// <param name="length">Length of the source and destination memory to copy.</param>
         /// <typeparam name="T">Type of elements to copy.</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -439,6 +452,18 @@
         public static void ZeroMemoryT<T>(T* pointer, uint length) where T : unmanaged
         {
             ZeroMemory(pointer, sizeof(T) * (int)length);
+        }
+
+        /// <summary>
+        /// Sets all bytes in memory to zero for a span of type T.
+        /// </summary>
+        /// <typeparam name="T">The type of elements in the span.</typeparam>
+        /// <param name="pointer">Pointer to the memory to clear.</param>
+        /// <param name="length">Number of elements of type T to clear.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ZeroMemoryT<T>(T* pointer, nint length) where T : unmanaged
+        {
+            ZeroMemory(pointer, sizeof(T) * length);
         }
 
         /// <summary>

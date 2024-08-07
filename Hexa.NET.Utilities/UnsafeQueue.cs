@@ -12,10 +12,10 @@
         private const int DefaultCapacity = 4;
 
         private T* items;
-        private T* head;
-        private T* tail;
-        private int size;
-        private int capacity;
+        private nint front;
+        private nint rear;
+        private nint size;
+        private nint capacity;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UnsafeQueue{T}"/> struct with the default capacity.
@@ -37,24 +37,48 @@
         /// <summary>
         /// Gets the number of elements in the queue.
         /// </summary>
-        public readonly int Size => size;
+        public readonly nint Size => size;
 
         /// <summary>
         /// Gets or sets the capacity of the queue.
         /// </summary>
-        public int Capacity
+        public nint Capacity
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             readonly get => capacity;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
+                if (value == capacity)
+                {
+                    return;
+                }
+
+                if (items == null)
+                {
+                    items = AllocT<T>(value);
+                    return;
+                }
+
                 var tmp = AllocT<T>(value);
-                var oldsize = size * sizeof(T);
-                var newsize = value * sizeof(T);
-                Buffer.MemoryCopy(items, tmp, newsize, oldsize > newsize ? newsize : oldsize);
+
+                if (size > 0)
+                {
+                    if (front <= rear)
+                    {
+                        MemcpyT(items + front, tmp, value, size);
+                    }
+                    else
+                    {
+                        MemcpyT(items + front, tmp, value, capacity - front);
+                        MemcpyT(items, tmp + (capacity - front), value, rear);
+                    }
+                }
+
                 Free(items);
-                head = tail = items = tmp;
+                items = tmp;
+                front = 0;
+                rear = size - 1;
                 capacity = value;
                 size = capacity < size ? capacity : size;
             }
@@ -70,6 +94,21 @@
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => items[index] = value;
         }
+
+        /// <summary>
+        /// Gets the pointer to the items of the queue.
+        /// </summary>
+        public readonly T* Items => items;
+
+        /// <summary>
+        /// Gets the pointer to the front element of the queue.
+        /// </summary>
+        public readonly T* Front => items + front;
+
+        /// <summary>
+        /// Gets the pointer to the rear element of the queue.
+        /// </summary>
+        public readonly T* Rear => items + rear;
 
         /// <summary>
         /// Initializes the queue with the default capacity.
@@ -91,9 +130,9 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Grow(int capacity)
+        private void Grow(nint capacity)
         {
-            int newcapacity = size == 0 ? DefaultCapacity : 2 * size;
+            nint newcapacity = size == 0 ? DefaultCapacity : 2 * size;
 
             if (newcapacity < capacity)
             {
@@ -103,12 +142,21 @@
             Capacity = newcapacity;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Shrink()
+        {
+            if (capacity > DefaultCapacity && capacity > size * 2)
+            {
+                Capacity = size;
+            }
+        }
+
         /// <summary>
         /// Ensures that the queue has the specified capacity.
         /// </summary>
         /// <param name="capacity">The desired capacity.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void EnsureCapacity(int capacity)
+        public void EnsureCapacity(nint capacity)
         {
             if (this.capacity < capacity)
             {
@@ -124,8 +172,8 @@
         public void Enqueue(T item)
         {
             EnsureCapacity(size + 1);
-            head++;
-            *head = item;
+            rear = (rear + 1) % capacity;
+            items[rear] = item;
             size++;
         }
 
@@ -136,15 +184,17 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Dequeue()
         {
-            var tmp = *tail;
-            *tail = default;
-            tail++;
-            if (head == tail)
+            if (size == 0)
             {
-                head = tail = items;
+                throw new InvalidOperationException("Queue is empty.");
             }
+
+            T item = items[front];
+            front = (front + 1) % capacity;
             size--;
-            return tmp;
+            Shrink();
+
+            return item;
         }
 
         /// <summary>
@@ -160,14 +210,12 @@
                 item = default;
                 return false;
             }
-            item = *tail;
-            *tail = default;
-            tail++;
-            if (head == tail)
-            {
-                head = tail = items;
-            }
+
+            item = items[front];
+            front = (front + 1) % capacity;
             size--;
+            Shrink();
+
             return true;
         }
 
@@ -178,9 +226,9 @@
         /// <param name="arrayIndex">The starting index in the destination array.</param>
         /// <param name="arraySize">The size of the destination array.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly void CopyTo(T* array, uint arrayIndex, uint arraySize)
+        public readonly void CopyTo(T* array, int arrayIndex, int arraySize)
         {
-            Buffer.MemoryCopy(items, &array[arrayIndex], (arraySize - arrayIndex) * sizeof(T), size * sizeof(T));
+            MemcpyT(items, &array[arrayIndex], arraySize - arrayIndex, size);
         }
 
         /// <summary>
@@ -192,9 +240,9 @@
         /// <param name="offset">The starting index in the queue.</param>
         /// <param name="count">The number of elements to copy.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CopyTo(T* array, uint arrayIndex, uint arraySize, uint offset, uint count)
+        public void CopyTo(T* array, int arrayIndex, int arraySize, int offset, int count)
         {
-            Buffer.MemoryCopy(&items[offset], &array[arrayIndex], (arraySize - arrayIndex) * sizeof(T), (count - offset) * sizeof(T));
+            MemcpyT(&items[offset], &array[arrayIndex], arraySize - arrayIndex, count - offset);
         }
 
         /// <summary>
@@ -203,13 +251,10 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
-            var ptr = items;
-            for (int i = 0; i < size; i++)
-            {
-                ptr[i] = default;
-            }
+            ZeroMemoryT(items, capacity);
             size = 0;
-            head = tail = items;
+            front = 0;
+            rear = 0;
         }
 
         /// <summary>
@@ -218,17 +263,13 @@
         /// <param name="item">The item to search for.</param>
         /// <returns><c>true</c> if the item is found; otherwise, <c>false</c>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Contains(T* item)
+        public bool Contains(T item)
         {
-            for (int i = 0; i < size; i++)
+            for (nint i = 0; i < size; i++)
             {
-                var current = &items[i];
-                if (current == null)
-                {
-                    break;
-                }
+                var current = items[(front + i) % capacity];
 
-                if (current == item)
+                if (current.Equals(item))
                 {
                     return true;
                 }
@@ -243,12 +284,11 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Release()
         {
-            Free(items);
-            items = null;
-            head = null;
-            tail = null;
-            capacity = 0;
-            size = 0;
+            if (items != null)
+            {
+                Free(items);
+                this = default;
+            }
         }
     }
 }
