@@ -427,7 +427,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemoryT<T>(T* pointer) where T : unmanaged
         {
-            Unsafe.InitBlock(pointer, 0, (uint)sizeof(T));
+            Unsafe.InitBlockUnaligned(pointer, 0, (uint)sizeof(T));
         }
 
         /// <summary>
@@ -474,7 +474,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemory(void* pointer, uint size)
         {
-            Unsafe.InitBlock(pointer, 0, size);
+            Unsafe.InitBlockUnaligned(pointer, 0, size);
         }
 
         /// <summary>
@@ -485,7 +485,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemory(void* pointer, int size)
         {
-            Unsafe.InitBlock(pointer, 0, (uint)size);
+            Unsafe.InitBlockUnaligned(pointer, 0, (uint)size);
         }
 
         /// <summary>
@@ -498,13 +498,13 @@
         {
             while (size > uint.MaxValue)
             {
-                Unsafe.InitBlock(pointer, 0, uint.MaxValue);
+                Unsafe.InitBlockUnaligned(pointer, 0, uint.MaxValue);
                 size -= uint.MaxValue;
             }
 
             if (size > 0)
             {
-                Unsafe.InitBlock(pointer, 0, (uint)size);
+                Unsafe.InitBlockUnaligned(pointer, 0, (uint)size);
             }
         }
 
@@ -518,13 +518,13 @@
         {
             while (size > uint.MaxValue)
             {
-                Unsafe.InitBlock(pointer, 0, uint.MaxValue);
+                Unsafe.InitBlockUnaligned(pointer, 0, uint.MaxValue);
                 size -= uint.MaxValue;
             }
 
             if (size > 0)
             {
-                Unsafe.InitBlock(pointer, 0, (uint)size);
+                Unsafe.InitBlockUnaligned(pointer, 0, (uint)size);
             }
         }
 
@@ -1244,25 +1244,6 @@
             for (int i = 0; i < count; i++)
             {
                 ptr[i] = value;
-            }
-        }
-
-        public static string? NullReturn()
-        {
-            return null;
-        }
-
-        public static void Main()
-        {
-            string? str = NullReturn();
-            str ??= string.Empty;
-            str = str.Trim();
-
-            object? obj = str;
-
-            if (obj is string s)
-            {
-                Console.WriteLine(s);
             }
         }
 
