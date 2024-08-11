@@ -439,7 +439,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ZeroMemoryT<T>(T* pointer, int length) where T : unmanaged
         {
-            ZeroMemoryT(pointer, sizeof(T) * length);
+            ZeroMemory(pointer, sizeof(T) * length);
         }
 
         /// <summary>
@@ -653,6 +653,27 @@
         }
 
         /// <summary>
+        /// Allocates and returns a pointer to memory for an array of elements of type T.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements to allocate.</typeparam>
+        /// <param name="count">The number of elements to allocate.</param>
+        /// <returns>A pointer to the allocated memory for the array.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T* AllocT<T>(nuint count
+#if TRACELEAK
+            , [CallerFilePath] string file = "", [CallerLineNumber] int line = 0
+#endif
+            ) where T : unmanaged
+        {
+            T* result = (T*)allocator.Alloc((nuint)sizeof(T) * count
+#if TRACELEAK
+                , $"File: {file}, Line: {line}"
+#endif
+                );
+            return result;
+        }
+
+        /// <summary>
         /// Allocates and returns a pointer to unmanaged memory.
         /// </summary>
         /// <param name="count">The number of bytes to allocate.</param>
@@ -791,6 +812,28 @@
             ) where T : unmanaged
         {
             T* result = (T*)allocator.ReAlloc(pointer, count * sizeof(T)
+#if TRACELEAK
+                   , $"File: {file}, Line: {line}"
+#endif
+                   );
+            return result;
+        }
+
+        /// <summary>
+        /// Reallocates and returns a pointer to unmanaged memory for an array of elements of type T, preserving the existing data.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the array.</typeparam>
+        /// <param name="pointer">A pointer to the existing memory.</param>
+        /// <param name="count">The new number of elements to allocate.</param>
+        /// <returns>A pointer to the reallocated memory.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T* ReAllocT<T>(T* pointer, nuint count
+#if TRACELEAK
+            , [CallerFilePath] string file = "", [CallerLineNumber] int line = 0
+#endif
+            ) where T : unmanaged
+        {
+            T* result = (T*)allocator.ReAlloc(pointer, count * (nuint)sizeof(T)
 #if TRACELEAK
                    , $"File: {file}, Line: {line}"
 #endif

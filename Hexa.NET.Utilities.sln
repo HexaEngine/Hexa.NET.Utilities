@@ -5,9 +5,13 @@ VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hexa.NET.Utilities", "Hexa.NET.Utilities\Hexa.NET.Utilities.csproj", "{055E63D3-810C-4289-97D4-E27BCDB86548}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApp", "TestApp\TestApp.csproj", "{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hexa.NET.Utilities.Tests", "Hexa.NET.Utilities.Tests\Hexa.NET.Utilities.Tests.csproj", "{85BB49D9-31ED-4090-BFDE-4D9405801C71}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hexa.NET.Utilities.Tests", "Hexa.NET.Utilities.Tests\Hexa.NET.Utilities.Tests.csproj", "{85BB49D9-31ED-4090-BFDE-4D9405801C71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hexa.NET.Unsafe.Analyzers", "Hexa.NET.Unsafe.Analyzers\Hexa.NET.Unsafe.Analyzers.csproj", "{5F79B930-69FB-4395-AAC5-5A776D94F2AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hexa.NET.Unsafe.Analyzers.Tests", "Hexa.NET.Unsafe.Analyzers.Tests\Hexa.NET.Unsafe.Analyzers.Tests.csproj", "{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,8 +29,8 @@ Global
 		{055E63D3-810C-4289-97D4-E27BCDB86548}.Release|Any CPU.Build.0 = Release|Any CPU
 		{055E63D3-810C-4289-97D4-E27BCDB86548}.Release|x86.ActiveCfg = Release|x86
 		{055E63D3-810C-4289-97D4-E27BCDB86548}.Release|x86.Build.0 = Release|x86
-		{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}.Debug|Any CPU.Build.0 = Debug|x86
+		{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}.Debug|x86.ActiveCfg = Debug|x86
 		{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}.Debug|x86.Build.0 = Debug|x86
 		{81CCE8DE-6E5F-427B-A09F-C7E0A0EE2638}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -41,6 +45,22 @@ Global
 		{85BB49D9-31ED-4090-BFDE-4D9405801C71}.Release|Any CPU.Build.0 = Release|Any CPU
 		{85BB49D9-31ED-4090-BFDE-4D9405801C71}.Release|x86.ActiveCfg = Release|x86
 		{85BB49D9-31ED-4090-BFDE-4D9405801C71}.Release|x86.Build.0 = Release|x86
+		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Debug|x86.Build.0 = Debug|Any CPU
+		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Release|x86.ActiveCfg = Release|Any CPU
+		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Release|x86.Build.0 = Release|Any CPU
+		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Debug|x86.Build.0 = Debug|Any CPU
+		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Release|x86.ActiveCfg = Release|Any CPU
+		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

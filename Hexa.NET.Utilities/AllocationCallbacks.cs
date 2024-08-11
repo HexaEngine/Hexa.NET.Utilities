@@ -84,13 +84,13 @@
 #endif
         }
 
-        public void* Alloc(nint size
+        public void* Alloc(nuint size
 #if TRACELEAK
             , string name
 #endif
             )
         {
-            void* ptr = (void*)Marshal.AllocHGlobal(size); ;
+            void* ptr = (void*)Marshal.AllocHGlobal((nint)size); ;
 #if TRACELEAK
             Allocation allocation = new(ptr, size, name);
             lock (allocations)
@@ -101,7 +101,7 @@
             return ptr;
         }
 
-        public void* ReAlloc(void* ptr, nint size
+        public void* ReAlloc(void* ptr, nuint size
 #if TRACELEAK
             , string name
 #endif
@@ -110,7 +110,7 @@
 #if TRACELEAK
             Remove(ptr);
 #endif
-            ptr = (void*)Marshal.ReAllocHGlobal((nint)ptr, size); ;
+            ptr = (void*)Marshal.ReAllocHGlobal((nint)ptr, (nint)size); ;
 #if TRACELEAK
             Allocation allocation = new(ptr, size, name);
             lock (allocations)

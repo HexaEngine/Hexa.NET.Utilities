@@ -4,33 +4,36 @@
     using System.Collections;
     using System.Runtime.CompilerServices;
 
-    public unsafe struct UnsafeDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>, IEquatable<UnsafeDictionary<TKey, TValue>> where TKey : unmanaged where TValue : unmanaged
+    public unsafe struct UnsafeDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>, IEquatable<UnsafeDictionary<TKey, TValue>>, IFreeable where TKey : unmanaged where TValue : unmanaged
     {
-        private enum EntryFlags : byte
+        private Entry* buckets;
+        private int capacity;
+        private int size;
+        private void* comparer; // use void* to avoid problems with Visual Studio; Visual Studio has a problem with generic delegate pointers.
+
+        private const float loadFactor = 0.75f;
+
+        internal enum EntryFlags : byte
         {
             Empty = 0,
             Tombstone = 1,
             Filled = 2
         }
 
-        private struct Entry
+        internal struct Entry
         {
-            public int HashCode;
+            public uint HashCode;
             public TKey Key;
             public TValue Value;
             public EntryFlags Flags;
 
-            public Entry(int hashCode, TKey key, TValue value, EntryFlags flags)
+            public Entry(uint hashCode, TKey key, TValue value, EntryFlags flags)
             {
                 HashCode = hashCode;
                 Key = key;
                 Value = value;
                 Flags = flags;
             }
-
-            public static Entry Empty => new(0, default, default, EntryFlags.Empty);
-
-            public static Entry Tombstone => new(0, default, default, EntryFlags.Tombstone);
 
             public readonly bool IsEmpty
             {
@@ -60,12 +63,9 @@
             }
         }
 
-        private Entry* buckets;
-        private int capacity;
-        private int size;
-        private delegate*<TKey, TKey, bool> comparer;
+        private readonly static Entry Empty = new(0, default, default, EntryFlags.Empty);
 
-        private const float loadFactor = 0.75f;
+        private readonly static Entry Tombstone = new(0, default, default, EntryFlags.Tombstone);
 
         public UnsafeDictionary(int initialCapacity)
         {
@@ -143,7 +143,7 @@
                 }
 
                 Entry* newBuckets = AllocT<Entry>(value);
-                MemsetT(newBuckets, Entry.Empty, value);
+                ZeroMemoryT(newBuckets, value);
 
                 if (size > 0)
                 {
@@ -162,11 +162,12 @@
             }
         }
 
-        private readonly Entry* FindEntry(Entry* entries, int capacity, TKey key, int hashCode)
+        private readonly Entry* FindEntry(Entry* entries, int capacity, TKey key, uint hashCode)
         {
             Entry* tombstone = null;
-            int index = hashCode % capacity;
-            while (true)
+            uint index = (uint)(hashCode % capacity);
+            bool iterate = true;
+            while (iterate)
             {
                 Entry* entry = &entries[index];
                 if (!entry->IsFilled)
@@ -191,8 +192,16 @@
                     return entry;
                 }
 
-                index = (index + 1) % capacity;
+                index++; // this is faster than %.
+                if (index == capacity)
+                {
+                    iterate = false;
+                    index = 0;
+                }
             }
+
+            // this should never happen only if someone forgot to call EnsureCapacity.
+            throw new InvalidOperationException("Infinite loop detected in FindEntry.");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -202,12 +211,12 @@
             {
                 return EqualityComparer<TKey>.Default.Equals(x, y);
             }
-            return comparer(x, y);
+            return ((delegate*<TKey, TKey, bool>)comparer)(x, y);
         }
 
         public void Grow(int capacity)
         {
-            Capacity = capacity * 2;
+            Capacity = HashHelpers.ExpandPrime(capacity);
         }
 
         public void EnsureCapacity(int capacity)
@@ -220,14 +229,14 @@
 
         public void TrimExcess()
         {
-            Capacity = size;
+            Capacity = (int)(size * (1 / loadFactor));
         }
 
         public void Add(TKey key, TValue value)
         {
             EnsureCapacity(size + 1);
 
-            int hashCode = key.GetHashCode();
+            uint hashCode = (uint)key.GetHashCode();
 
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
@@ -248,7 +257,7 @@
         {
             EnsureCapacity(size + 1);
 
-            int hashCode = key.GetHashCode();
+            uint hashCode = (uint)key.GetHashCode();
 
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
@@ -267,7 +276,7 @@
 
         public readonly bool ContainsKey(TKey key)
         {
-            int hashCode = key.GetHashCode();
+            uint hashCode = (uint)key.GetHashCode();
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
             return entry->HashCode == hashCode;
         }
@@ -279,7 +288,7 @@
                 return false;
             }
 
-            int hashCode = key.GetHashCode();
+            uint hashCode = (uint)key.GetHashCode();
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
             if (!entry->IsFilled)
@@ -287,7 +296,7 @@
                 return false;
             }
 
-            *entry = Entry.Tombstone;
+            *entry = Tombstone;
             size--;
 
             return true;
@@ -301,7 +310,7 @@
                 return false;
             }
 
-            int hashCode = key.GetHashCode();
+            uint hashCode = (uint)key.GetHashCode();
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
             if (!entry->IsFilled)
@@ -316,46 +325,41 @@
 
         public void Clear()
         {
-            MemsetT(buckets, Entry.Empty, capacity);
+            ZeroMemoryT(buckets, capacity);
             size = 0;
         }
 
-        ICollection<TKey> IDictionary<TKey, TValue>.Keys
+        /// <summary>
+        /// Gets a collection containing the keys in the dictionary.
+        ///
+        /// Similar to the `Values` property, this collection reflects the state of the dictionary
+        /// at the time it is accessed. Subsequent modifications to the dictionary or copies made
+        /// of the dictionary will not affect this collection, and no modification exceptions will
+        /// be thrown during enumeration.
+        ///
+        /// This behavior results from `UnsafeDictionary` being a value type (`struct`), where each
+        /// copy of the dictionary is independent and version tracking is not feasible.
+        /// </summary>
+        readonly ICollection<TKey> IDictionary<TKey, TValue>.Keys
         {
-            get
-            {
-                List<TKey> keys = new(capacity);
-                for (int i = 0; i < capacity; i++)
-                {
-                    Entry* current = &buckets[i];
-                    if (!current->IsFilled)
-                    {
-                        continue;
-                    }
-
-                    keys.Add(current->Key);
-                }
-                return keys;
-            }
+            get => new KeyCollection(this);
         }
 
-        ICollection<TValue> IDictionary<TKey, TValue>.Values
+        /// <summary>
+        /// Gets a collection containing the values in the dictionary.
+        ///
+        /// Note: Since `UnsafeDictionary` is implemented as a `struct`, this collection is
+        /// tied to the state of the dictionary at the time it is accessed. If the dictionary
+        /// is copied or modified after this collection is accessed, the `ValuesCollection`
+        /// will not reflect those changes, and no exception will be thrown.
+        ///
+        /// Because the `UnsafeDictionary` is a value type, each copy of the dictionary, including
+        /// those made implicitly when passing the dictionary to methods or properties, is independent.
+        /// As such, the typical version tracking used in reference types (`class`) is not applicable.
+        /// </summary>
+        readonly ICollection<TValue> IDictionary<TKey, TValue>.Values
         {
-            get
-            {
-                List<TValue> values = new(capacity);
-                for (int i = 0; i < capacity; i++)
-                {
-                    Entry* current = &buckets[i];
-                    if (!current->IsFilled)
-                    {
-                        continue;
-                    }
-
-                    values.Add(current->Value);
-                }
-                return values;
-            }
+            get => new ValueCollection(this);
         }
 
         public readonly int Size => size;
@@ -462,7 +466,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.capacity - 1)
+                if (itemIndex >= dictionary.size - 1)
                 {
                     return false;
                 }
@@ -536,7 +540,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.capacity - 1)
+                if (itemIndex >= dictionary.size - 1)
                 {
                     return false;
                 }
@@ -610,7 +614,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.capacity - 1)
+                if (itemIndex >= dictionary.size - 1)
                 {
                     return false;
                 }
@@ -637,6 +641,123 @@
                 index = 0;
                 itemIndex = 0;
                 current = null;
+            }
+        }
+
+        public readonly struct KeyCollection : ICollection<TKey>, ICollection, IReadOnlyCollection<TKey>
+        {
+            private readonly UnsafeDictionary<TKey, TValue> dictionary;
+
+            public KeyCollection(UnsafeDictionary<TKey, TValue> dictionary)
+            {
+                this.dictionary = dictionary;
+            }
+
+            public int Count => dictionary.size;
+
+            public bool IsReadOnly => true;
+
+            public bool IsSynchronized => false;
+
+            public object SyncRoot => null!;
+
+            public void Add(TKey item) => throw new NotSupportedException();
+
+            public void Clear() => throw new NotSupportedException();
+
+            public bool Remove(TKey item) => throw new NotSupportedException();
+
+            public bool Contains(TKey item)
+            {
+                return dictionary.ContainsKey(item);
+            }
+
+            public void CopyTo(TKey[] array, int arrayIndex)
+            {
+                foreach (var pair in dictionary)
+                {
+                    array[arrayIndex++] = pair.Key;
+                }
+            }
+
+            public IEnumerator<TKey> GetEnumerator()
+            {
+                return new KeyEnumerator(dictionary);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public void CopyTo(Array array, int index)
+            {
+                foreach (var pair in dictionary)
+                {
+                    array.SetValue(pair.Key, index++);
+                }
+            }
+        }
+
+        public readonly struct ValueCollection : ICollection<TValue>, ICollection, IReadOnlyCollection<TValue>
+        {
+            private readonly UnsafeDictionary<TKey, TValue> dictionary;
+
+            public ValueCollection(UnsafeDictionary<TKey, TValue> dictionary)
+            {
+                this.dictionary = dictionary;
+            }
+
+            public int Count => dictionary.size;
+
+            public bool IsReadOnly => true;
+
+            public bool IsSynchronized => false;
+
+            public object SyncRoot => null!;
+
+            public void Add(TValue item) => throw new NotSupportedException();
+
+            public void Clear() => throw new NotSupportedException();
+
+            public bool Remove(TValue item) => throw new NotSupportedException();
+
+            public bool Contains(TValue item)
+            {
+                foreach (var pair in dictionary)
+                {
+                    if (EqualityComparer<TValue>.Default.Equals(pair.Value, item))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            public void CopyTo(TValue[] array, int arrayIndex)
+            {
+                foreach (var pair in dictionary)
+                {
+                    array[arrayIndex++] = pair.Value;
+                }
+            }
+
+            public IEnumerator<TValue> GetEnumerator()
+            {
+                return new ValueEnumerator(dictionary);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public void CopyTo(Array array, int index)
+            {
+                foreach (var pair in dictionary)
+                {
+                    array.SetValue(pair.Value, index++);
+                }
             }
         }
 
@@ -683,6 +804,11 @@
         public static bool operator !=(IEnumerable<KeyValuePair<TKey, TValue>> left, UnsafeDictionary<TKey, TValue> right)
         {
             return !(left == right);
+        }
+
+        public override readonly string ToString()
+        {
+            return $"Count = {size}";
         }
 
         public readonly UnsafeDictionary<TKey, TValue> Clone()

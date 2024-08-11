@@ -2,7 +2,7 @@
 {
     using System;
 
-    public unsafe struct UnsafeCircularBuffer<T> where T : unmanaged
+    public unsafe struct UnsafeCircularBuffer<T> : IFreeable where T : unmanaged
     {
         private T* buffer;
         private int capacity;
@@ -112,7 +112,7 @@
             head = tail = 0;
         }
 
-        public void Dispose()
+        public void Release()
         {
             Free(buffer);
             buffer = null;

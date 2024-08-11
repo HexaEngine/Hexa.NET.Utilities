@@ -2,6 +2,7 @@
 {
     using System.Collections;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Runtime.CompilerServices;
 
     /// <summary>
@@ -10,11 +11,11 @@
     /// <typeparam name="T">The type of the elements.</typeparam>
     public unsafe struct UnsafeList<T> : IFreeable, IEnumerable<T>, IList<T>, IReadOnlyList<T>, IEquatable<UnsafeList<T>> where T : unmanaged
     {
-        private const uint DefaultCapacity = 4;
+        private const int DefaultCapacity = 4;
 
         private T* pointer;
-        private uint size;
-        private uint capacity;
+        private int size;
+        private int capacity;
 
         /// <summary>
         /// Represents an enumerator for the elements in the <see cref="UnsafeList{T}"/>.
@@ -22,7 +23,7 @@
         public struct Enumerator : IEnumerator<T>
         {
             private readonly T* pointer;
-            private readonly uint size;
+            private readonly int size;
             private int currentIndex;
 
             /// <summary>
@@ -91,7 +92,7 @@
         /// <param name="values">An array of values to initialize the list.</param>
         public UnsafeList(T[] values)
         {
-            Capacity = (uint)values.Length;
+            Capacity = values.Length;
             AppendRange(values);
         }
 
@@ -99,7 +100,7 @@
         /// Initializes a new instance of the <see cref="UnsafeList{T}"/> struct with the specified capacity.
         /// </summary>
         /// <param name="capacity">The initial capacity of the list.</param>
-        public UnsafeList(uint capacity)
+        public UnsafeList(int capacity)
         {
             Capacity = capacity;
         }
@@ -107,12 +108,12 @@
         /// <summary>
         /// Gets the number of elements in the list.
         /// </summary>
-        public readonly uint Size => size;
+        public readonly int Size => size;
 
         /// <summary>
         /// Gets the number of elements in the list.
         /// </summary>
-        public readonly int Count => (int)size;
+        public readonly int Count => size;
 
         readonly bool ICollection<T>.IsReadOnly => false;
 
@@ -139,11 +140,9 @@
         /// <summary>
         /// Gets or sets the capacity of the list.
         /// </summary>
-        public uint Capacity
+        public int Capacity
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             readonly get => capacity;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 if (pointer == null)
@@ -164,17 +163,6 @@
         /// <summary>
         /// Gets or sets the element at the specified index.
         /// </summary>
-        public T this[uint index]
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => pointer[index];
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => pointer[index] = value;
-        }
-
-        /// <summary>
-        /// Gets or sets the element at the specified index.
-        /// </summary>
         public T this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -189,7 +177,7 @@
         /// <param name="index">The index of the element to retrieve.</param>
         /// <returns>The element at the specified index.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T At(uint index)
+        public T At(int index)
         {
 #if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfNegative(index);
@@ -201,36 +189,6 @@
             }
 #endif
             return this[index];
-        }
-
-        /// <summary>
-        /// Gets the element at the specified index, with bounds checking.
-        /// </summary>
-        /// <param name="index">The index of the element to retrieve.</param>
-        /// <returns>The element at the specified index.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T At(int index)
-        {
-#if NET8_0_OR_GREATER
-            ArgumentOutOfRangeException.ThrowIfNegative(index);
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, (int)size);
-#else
-            if (index < 0 || index >= size)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-#endif
-            return this[index];
-        }
-
-        /// <summary>
-        /// Gets a pointer to the element at the specified index.
-        /// </summary>
-        /// <param name="index">The index of the element to retrieve.</param>
-        /// <returns>A pointer to the element at the specified index.</returns>
-        public T* GetPointer(uint index)
-        {
-            return &pointer[index];
         }
 
         /// <summary>
@@ -257,15 +215,15 @@
         /// </summary>
         /// <param name="capacity">The initial capacity of the list.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Init(uint capacity)
+        public void Init(int capacity)
         {
             Grow(capacity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Grow(uint capacity)
+        private void Grow(int capacity)
         {
-            uint newcapacity = size == 0 ? DefaultCapacity : 2 * size;
+            int newcapacity = size == 0 ? DefaultCapacity : 2 * size;
 
             if (newcapacity < capacity)
             {
@@ -280,7 +238,7 @@
         /// </summary>
         /// <param name="capacity">The desired capacity.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reserve(uint capacity)
+        public void Reserve(int capacity)
         {
             if (this.capacity < capacity || pointer == null)
             {
@@ -300,7 +258,7 @@
         /// Resizes the vector to the specified size. If the new size is larger than the current capacity, the capacity will be increased accordingly.
         /// </summary>
         /// <param name="newSize">The new size of the vector.</param>
-        public void Resize(uint newSize)
+        public void Resize(int newSize)
         {
             if (size == newSize)
             {
@@ -325,9 +283,26 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void PushBack(T item)
         {
-            Reserve(size + 1);
+            int size = this.size;
+            if ((uint)size < (uint)capacity)
+            {
+                this.size = size + 1;
+                pointer[size] = item;
+            }
+            else
+            {
+                AddWithResize(item);
+            }
+        }
+
+        // Non-inline from List.Add to improve its code quality as uncommon path
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void AddWithResize(T item)
+        {
+            int size = this.size;
+            Grow(size + 1);
+            this.size = size + 1;
             pointer[size] = item;
-            size++;
         }
 
         /// <summary>
@@ -357,13 +332,13 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AppendRange(T[] values)
         {
-            Reserve(size + (uint)values.Length);
+            Reserve(size + (int)values.Length);
 
             fixed (T* src = values)
             {
                 Memcpy(src, &pointer[size], capacity * sizeof(T), values.Length * sizeof(T));
             }
-            size += (uint)values.Length;
+            size += values.Length;
         }
 
         /// <summary>
@@ -372,7 +347,7 @@
         /// <param name="values">A pointer to the array of elements to append.</param>
         /// <param name="count">The number of elements to append.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendRange(T* values, uint count)
+        public void AppendRange(T* values, int count)
         {
             Reserve(size + count);
 
@@ -388,7 +363,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Remove(T item)
         {
-            var index = IndexOf(&item);
+            var index = IndexOf(item);
             if (index == -1)
             {
                 return false;
@@ -404,25 +379,6 @@
         /// <param name="index">The index of the item to remove.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RemoveAt(int index)
-        {
-            if (index == this.size - 1)
-            {
-                pointer[this.size - 1] = default;
-                this.size--;
-                return;
-            }
-
-            var size = (this.size - index) * sizeof(T);
-            Buffer.MemoryCopy(&pointer[index + 1], &pointer[index], size, size);
-            this.size--;
-        }
-
-        /// <summary>
-        /// Removes the item at the specified index from the list.
-        /// </summary>
-        /// <param name="index">The index of the item to remove.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void RemoveAt(uint index)
         {
             if (index == this.size - 1)
             {
@@ -453,48 +409,6 @@
         }
 
         /// <summary>
-        /// Inserts an item at the specified index in the list.
-        /// </summary>
-        /// <param name="index">The index at which to insert the item.</param>
-        /// <param name="item">The item to insert.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Insert(uint index, T item)
-        {
-            Reserve(this.size + 1);
-
-            var size = (this.size - index) * sizeof(T);
-            Buffer.MemoryCopy(&pointer[index], &pointer[index + 1], size, size);
-            pointer[index] = item;
-            this.size++;
-        }
-
-        /// <summary>
-        /// Copies the contents of the list to the specified array.
-        /// </summary>
-        /// <param name="array">The destination array.</param>
-        /// <param name="arrayIndex">The starting index in the destination array.</param>
-        /// <param name="arraySize">The size of the destination array.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly void CopyTo(T* array, uint arrayIndex, uint arraySize)
-        {
-            Buffer.MemoryCopy(pointer, &array[arrayIndex], (arraySize - arrayIndex) * sizeof(T), size * sizeof(T));
-        }
-
-        /// <summary>
-        /// Copies a range of elements from the list to the specified array.
-        /// </summary>
-        /// <param name="array">The destination array.</param>
-        /// <param name="arrayIndex">The starting index in the destination array.</param>
-        /// <param name="arraySize">The size of the destination array.</param>
-        /// <param name="offset">The starting index in the list.</param>
-        /// <param name="count">The number of elements to copy.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CopyTo(T* array, uint arrayIndex, uint arraySize, uint offset, uint count)
-        {
-            Buffer.MemoryCopy(&pointer[offset], &array[arrayIndex], (arraySize - arrayIndex) * sizeof(T), (count - offset) * sizeof(T));
-        }
-
-        /// <summary>
         /// Clears the list.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -509,17 +423,13 @@
         /// <param name="item">The item to search for.</param>
         /// <returns><c>true</c> if the item is found; otherwise, <c>false</c>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Contains(T* item)
+        public bool Contains(T item)
         {
             for (int i = 0; i < size; i++)
             {
-                var current = &pointer[i];
-                if (current == null)
-                {
-                    break;
-                }
+                var current = pointer[i];
 
-                if (current == item)
+                if (EqualityComparer<T>.Default.Equals(current, item))
                 {
                     return true;
                 }
@@ -528,39 +438,25 @@
             return false;
         }
 
-        bool ICollection<T>.Contains(T item)
-        {
-            return Contains(&item);
-        }
-
         /// <summary>
         /// Searches for the specified item and returns the index of the first occurrence within the entire list.
         /// </summary>
         /// <param name="item">The item to search for.</param>
         /// <returns>The index of the first occurrence of the item, or -1 if not found.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int IndexOf(T* item)
+        public int IndexOf(T item)
         {
             for (int i = 0; i < size; i++)
             {
-                var current = &pointer[i];
-                if (current == null)
-                {
-                    break;
-                }
+                var current = pointer[i];
 
-                if (current == item)
+                if (EqualityComparer<T>.Default.Equals(current, item))
                 {
                     return i;
                 }
             }
 
             return -1;
-        }
-
-        int IList<T>.IndexOf(T item)
-        {
-            return IndexOf(&item);
         }
 
         /// <summary>
@@ -610,7 +506,7 @@
         /// </summary>
         /// <returns>The incremented counter value.</returns>
         /// <remarks>Note: The capacity remains unchanged due to race conditions.</remarks>
-        public uint InterlockedIncrementCounter()
+        public int InterlockedIncrementCounter()
         {
             return Interlocked.Increment(ref size);
         }
@@ -620,7 +516,7 @@
         /// </summary>
         /// <returns>The decremented counter value.</returns>
         /// <remarks>Note: The capacity remains unchanged due to race conditions.</remarks>
-        public uint InterlockedDecrementCounter()
+        public int InterlockedDecrementCounter()
         {
             return Interlocked.Decrement(ref size);
         }
@@ -631,9 +527,9 @@
         /// <param name="value">The value to be added to the list.</param>
         /// <returns>The index of the added element.</returns>
         /// <remarks>Note: The capacity remains unchanged due to race conditions.</remarks>
-        public uint InterlockedPushBack(T value)
+        public int InterlockedPushBack(T value)
         {
-            uint index = Interlocked.Increment(ref size);
+            int index = Interlocked.Increment(ref size);
             pointer[index] = value;
             return index;
         }
@@ -643,9 +539,9 @@
         /// </summary>
         /// <returns>The index of the removed element.</returns>
         /// <remarks>Note: The capacity remains unchanged due to race conditions.</remarks>
-        public uint InterlockedPopBack()
+        public int InterlockedPopBack()
         {
-            uint index = InterlockedDecrementCounter();
+            int index = InterlockedDecrementCounter();
             pointer[index + 1] = default;
             return index;
         }
@@ -656,7 +552,7 @@
         /// <param name="newSize">The new size to set for the list.</param>
         /// <returns>The previous size of the list.</returns>
         /// <remarks>Note: The capacity remains unchanged due to race conditions.</remarks>
-        public uint InterlockedResize(uint newSize)
+        public int InterlockedResize(int newSize)
         {
             return Interlocked.Exchange(ref size, newSize);
         }

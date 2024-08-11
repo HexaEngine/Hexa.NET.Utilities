@@ -12,10 +12,10 @@
         private const int DefaultCapacity = 4;
 
         private T* items;
-        private nint front;
-        private nint rear;
-        private nint size;
-        private nint capacity;
+        private int front;
+        private int rear;
+        private int size;
+        private int capacity;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UnsafeQueue{T}"/> struct with the default capacity.
@@ -37,12 +37,12 @@
         /// <summary>
         /// Gets the number of elements in the queue.
         /// </summary>
-        public readonly nint Size => size;
+        public readonly int Size => size;
 
         /// <summary>
         /// Gets or sets the capacity of the queue.
         /// </summary>
-        public nint Capacity
+        public int Capacity
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             readonly get => capacity;
@@ -130,9 +130,9 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Grow(nint capacity)
+        private void Grow(int capacity)
         {
-            nint newcapacity = size == 0 ? DefaultCapacity : 2 * size;
+            int newcapacity = size == 0 ? DefaultCapacity : 2 * size;
 
             if (newcapacity < capacity)
             {
@@ -156,7 +156,7 @@
         /// </summary>
         /// <param name="capacity">The desired capacity.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void EnsureCapacity(nint capacity)
+        public void EnsureCapacity(int capacity)
         {
             if (this.capacity < capacity)
             {

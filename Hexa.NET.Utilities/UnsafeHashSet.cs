@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
 
-    public unsafe struct UnsafeHashSet<T> : ICollection<T>, ISet<T>, IReadOnlyCollection<T>
+    public unsafe struct UnsafeHashSet<T> : ICollection<T>, ISet<T>, IReadOnlyCollection<T>, IFreeable
 #if NET5_0_OR_GREATER
         , IReadOnlySet<T>, IEquatable<UnsafeHashSet<T>>
 #endif
@@ -19,11 +19,11 @@
 
         private struct Entry
         {
-            public int HashCode;
+            public uint HashCode;
             public T Value;
             public EntryFlags Flags;
 
-            public Entry(int hashCode, T value, EntryFlags flags)
+            public Entry(uint hashCode, T value, EntryFlags flags)
             {
                 HashCode = hashCode;
                 Value = value;
@@ -65,7 +65,7 @@
         private Entry* buckets;
         private int capacity;
         private int size;
-        private delegate*<T, T, bool> comparer;
+        private void* comparer;
 
         private const float loadFactor = 0.75f;
 
@@ -180,10 +180,10 @@
 
         public readonly bool IsReadOnly => false;
 
-        private readonly Entry* FindEntry(Entry* entries, int capacity, T value, int hashCode)
+        private readonly Entry* FindEntry(Entry* entries, int capacity, T value, uint hashCode)
         {
             Entry* tombstone = null;
-            int index = hashCode % capacity;
+            int index = (int)(hashCode % capacity);
             while (true)
             {
                 Entry* entry = &entries[index];
@@ -215,7 +215,7 @@
 
         private readonly int FindItemIndex(T item)
         {
-            int hashCode = item.GetHashCode();
+            uint hashCode = (uint)item.GetHashCode();
             Entry* entry = FindEntry(buckets, capacity, item, hashCode);
             return entry->IsFilled ? (int)(entry - buckets) : -1;
         }
@@ -227,7 +227,7 @@
             {
                 return EqualityComparer<T>.Default.Equals(x, y);
             }
-            return comparer(x, y);
+            return ((delegate*<T, T, bool>)comparer)(x, y);
         }
 
         public void Grow(int capacity)
@@ -252,7 +252,7 @@
         {
             EnsureCapacity(size + 1);
 
-            int hashCode = value.GetHashCode();
+            uint hashCode = (uint)value.GetHashCode();
 
             Entry* entry = FindEntry(buckets, capacity, value, hashCode);
 
@@ -273,7 +273,7 @@
         {
             EnsureCapacity(size + 1);
 
-            int hashCode = value.GetHashCode();
+            uint hashCode = (uint)value.GetHashCode();
 
             Entry* entry = FindEntry(buckets, capacity, value, hashCode);
             location = (int)(entry - buckets);
@@ -297,7 +297,7 @@
             {
                 return false;
             }
-            int hashCode = value.GetHashCode();
+            uint hashCode = (uint)value.GetHashCode();
             Entry* entry = FindEntry(buckets, capacity, value, hashCode);
             return entry->HashCode == hashCode;
         }
@@ -309,7 +309,7 @@
                 return false;
             }
 
-            int hashCode = value.GetHashCode();
+            uint hashCode = (uint)value.GetHashCode();
             Entry* entry = FindEntry(buckets, capacity, value, hashCode);
 
             if (!entry->IsFilled)
