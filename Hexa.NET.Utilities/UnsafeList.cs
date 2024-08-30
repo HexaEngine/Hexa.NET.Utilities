@@ -13,7 +13,7 @@
     {
         private const int DefaultCapacity = 4;
 
-        private T* pointer;
+        private T* items;
         private int size;
         private int capacity;
 
@@ -32,7 +32,7 @@
             /// <param name="list">The <see cref="UnsafeList{T}"/> to enumerate.</param>
             internal Enumerator(UnsafeList<T> list)
             {
-                pointer = list.pointer;
+                pointer = list.items;
                 size = list.size;
                 currentIndex = -1;
             }
@@ -120,7 +120,7 @@
         /// <summary>
         /// Gets the pointer to the underlying data array.
         /// </summary>
-        public readonly T* Data => pointer;
+        public readonly T* Data => items;
 
         /// <summary>
         /// Gets a value indicating whether the list is empty.
@@ -130,12 +130,12 @@
         /// <summary>
         /// Gets a pointer to the first element in the list.
         /// </summary>
-        public readonly T* Front => pointer;
+        public readonly T* Front => items;
 
         /// <summary>
         /// Gets a pointer to the last element in the list.
         /// </summary>
-        public readonly T* Back => &pointer[size - 1];
+        public readonly T* Back => &items[size - 1];
 
         /// <summary>
         /// Gets or sets the capacity of the list.
@@ -145,14 +145,14 @@
             readonly get => capacity;
             set
             {
-                if (pointer == null)
+                if (items == null)
                 {
-                    pointer = AllocT<T>(value);
+                    items = AllocT<T>(value);
                     capacity = value;
                     Erase();
                     return;
                 }
-                pointer = ReAllocT(pointer, value);
+                items = ReAllocT(items, value);
                 capacity = value;
                 size = capacity < size ? capacity : size;
             }
@@ -166,9 +166,9 @@
         public T this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => pointer[index];
+            get => items[index];
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => pointer[index] = value;
+            set => items[index] = value;
         }
 
         /// <summary>
@@ -198,7 +198,7 @@
         /// <returns>A pointer to the element at the specified index.</returns>
         public T* GetPointer(int index)
         {
-            return &pointer[index];
+            return &items[index];
         }
 
         /// <summary>
@@ -240,7 +240,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reserve(int capacity)
         {
-            if (this.capacity < capacity || pointer == null)
+            if (this.capacity < capacity || items == null)
             {
                 Grow(capacity);
             }
@@ -273,7 +273,7 @@
         /// </summary>
         public readonly void Erase()
         {
-            ZeroMemoryT(pointer, capacity);
+            ZeroMemoryT(items, capacity);
         }
 
         /// <summary>
@@ -287,7 +287,7 @@
             if ((uint)size < (uint)capacity)
             {
                 this.size = size + 1;
-                pointer[size] = item;
+                items[size] = item;
             }
             else
             {
@@ -302,7 +302,7 @@
             int size = this.size;
             Grow(size + 1);
             this.size = size + 1;
-            pointer[size] = item;
+            items[size] = item;
         }
 
         /// <summary>
@@ -321,7 +321,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void PopBack()
         {
-            pointer[size - 1] = default;
+            items[size - 1] = default;
             size--;
         }
 
@@ -336,7 +336,7 @@
 
             fixed (T* src = values)
             {
-                Memcpy(src, &pointer[size], capacity * sizeof(T), values.Length * sizeof(T));
+                Memcpy(src, &items[size], capacity * sizeof(T), values.Length * sizeof(T));
             }
             size += values.Length;
         }
@@ -351,7 +351,7 @@
         {
             Reserve(size + count);
 
-            Memcpy(values, &pointer[size], capacity * sizeof(T), count * sizeof(T));
+            Memcpy(values, &items[size], capacity * sizeof(T), count * sizeof(T));
 
             size += count;
         }
@@ -382,13 +382,13 @@
         {
             if (index == this.size - 1)
             {
-                pointer[this.size - 1] = default;
+                items[this.size - 1] = default;
                 this.size--;
                 return;
             }
 
             var size = (this.size - index) * sizeof(T);
-            Buffer.MemoryCopy(&pointer[index + 1], &pointer[index], size, size);
+            Buffer.MemoryCopy(&items[index + 1], &items[index], size, size);
             this.size--;
         }
 
@@ -403,8 +403,8 @@
             Reserve(this.size + 1);
 
             var size = (this.size - index) * sizeof(T);
-            Buffer.MemoryCopy(&pointer[index], &pointer[index + 1], size, size);
-            pointer[index] = item;
+            Buffer.MemoryCopy(&items[index], &items[index + 1], size, size);
+            items[index] = item;
             this.size++;
         }
 
@@ -427,7 +427,7 @@
         {
             for (int i = 0; i < size; i++)
             {
-                var current = pointer[i];
+                var current = items[i];
 
                 if (EqualityComparer<T>.Default.Equals(current, item))
                 {
@@ -448,7 +448,7 @@
         {
             for (int i = 0; i < size; i++)
             {
-                var current = pointer[i];
+                var current = items[i];
 
                 if (EqualityComparer<T>.Default.Equals(current, item))
                 {
@@ -468,7 +468,7 @@
         {
             for (int i = 0; i < size; i++)
             {
-                var current = pointer[i];
+                var current = items[i];
 
                 if (comparer(current))
                 {
@@ -484,7 +484,7 @@
         /// </summary>
         public readonly void Reverse()
         {
-            new Span<T>(pointer, (int)size).Reverse();
+            new Span<T>(items, (int)size).Reverse();
         }
 
         /// <summary>
@@ -493,8 +493,8 @@
         /// <param name="list">The list whose content will be moved to this list.</param>
         public void Move(UnsafeList<T> list)
         {
-            Free(pointer);
-            pointer = list.pointer;
+            Free(items);
+            items = list.items;
             capacity = list.capacity;
             size = list.size;
         }
@@ -530,7 +530,7 @@
         public int InterlockedPushBack(T value)
         {
             int index = Interlocked.Increment(ref size);
-            pointer[index] = value;
+            items[index] = value;
             return index;
         }
 
@@ -542,7 +542,7 @@
         public int InterlockedPopBack()
         {
             int index = InterlockedDecrementCounter();
-            pointer[index + 1] = default;
+            items[index + 1] = default;
             return index;
         }
 
@@ -584,9 +584,9 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Release()
         {
-            if (pointer != null)
+            if (items != null)
             {
-                Free(pointer);
+                Free(items);
                 this = default;
             }
         }
@@ -615,7 +615,7 @@
         {
             fixed (T* dst = array)
             {
-                MemcpyT(&pointer[arrayIndex], dst, array.Length);
+                MemcpyT(&items[arrayIndex], dst, array.Length);
             }
         }
 
@@ -626,7 +626,7 @@
 
         public readonly Span<T> AsSpan()
         {
-            return new(pointer, (int)size);
+            return new(items, (int)size);
         }
 
         public override readonly bool Equals(object? obj)
@@ -636,12 +636,12 @@
 
         public readonly bool Equals(UnsafeList<T> other)
         {
-            return pointer == other.pointer;
+            return items == other.items;
         }
 
         public override readonly int GetHashCode()
         {
-            return HashCode.Combine((nint)pointer);
+            return HashCode.Combine((nint)items);
         }
 
         public static bool operator ==(UnsafeList<T> left, UnsafeList<T> right)

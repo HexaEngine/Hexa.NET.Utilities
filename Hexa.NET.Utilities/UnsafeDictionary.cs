@@ -166,8 +166,8 @@
         {
             Entry* tombstone = null;
             uint index = (uint)(hashCode % capacity);
-            bool iterate = true;
-            while (iterate)
+            bool exit = false;
+            while (true)
             {
                 Entry* entry = &entries[index];
                 if (!entry->IsFilled)
@@ -195,8 +195,12 @@
                 index++; // this is faster than %.
                 if (index == capacity)
                 {
-                    iterate = false;
+                    if (exit)
+                    {
+                        break;
+                    }
                     index = 0;
+                    exit = true;
                 }
             }
 
