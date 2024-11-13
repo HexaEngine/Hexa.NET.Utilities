@@ -50,7 +50,9 @@
         /// </summary>
         public void Clear()
         {
+#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
             pool.Clear();
+#endif
         }
     }
 }

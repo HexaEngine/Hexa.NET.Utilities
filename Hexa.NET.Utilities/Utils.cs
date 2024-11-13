@@ -174,7 +174,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string? ToStringFromUTF8(byte* ptr)
         {
-            return Marshal.PtrToStringUTF8((nint)ptr);
+            return new string((sbyte*)ptr);
         }
 
         /// <summary>

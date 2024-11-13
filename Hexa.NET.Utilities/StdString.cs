@@ -188,7 +188,10 @@
             data = AllocT<byte>(byteCount + 1);
             ZeroMemoryT(data, byteCount + 1);
             capacity = size = byteCount;
-            Encoding.UTF8.GetBytes(s, new Span<byte>(data, byteCount));
+            fixed (char* chars = s)
+            {
+                Encoding.UTF8.GetBytes(chars, s.Length, data, byteCount);
+            }
         }
 
         /// <summary>
@@ -1187,12 +1190,21 @@
         /// <returns>The hash code for the string.</returns>
         public override int GetHashCode()
         {
+#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
             HashCode hashCode = new();
             for (int i = 0; i < size; i++)
             {
                 hashCode.Add(data[i]);
             }
             return hashCode.ToHashCode();
+#else
+            int hash = 17;
+            for (int i = 0; i < size; i++)
+            {
+                hash = hash * 31 + data[i].GetHashCode();
+            }
+            return hash;
+#endif
         }
 
         /// <summary>

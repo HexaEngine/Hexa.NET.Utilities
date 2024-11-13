@@ -1,4 +1,5 @@
-﻿namespace Hexa.NET.Utilities.Collections
+﻿#if NET5_0_OR_GREATER
+namespace Hexa.NET.Utilities.Collections
 {
     using System;
     using System.Collections.Generic;
@@ -43,3 +44,4 @@
 #nullable restore
     }
 }
+#endif

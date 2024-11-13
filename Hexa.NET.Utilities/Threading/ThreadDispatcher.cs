@@ -356,7 +356,9 @@
         {
             if (!disposedValue)
             {
+#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
                 waitingQueue.Clear();
+#endif
                 disposedValue = true;
             }
         }

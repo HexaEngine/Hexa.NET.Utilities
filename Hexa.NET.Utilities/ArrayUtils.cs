@@ -16,7 +16,7 @@
         public static void Add<T>(ref T[] array, T value)
         {
             Array.Resize(ref array, array.Length + 1);
-            array[^1] = value;
+            array[array.Length - 1] = value;
         }
 
         /// <summary>

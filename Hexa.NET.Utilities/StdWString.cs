@@ -43,7 +43,10 @@
             var byteCount = Encoding.Unicode.GetByteCount(s) / sizeof(char);
             data = AllocT<char>(byteCount + 1);
             capacity = size = s.Length;
-            Encoding.Unicode.GetBytes(s, new Span<byte>(data, byteCount * sizeof(char)));
+            fixed (char* chars = s)
+            {
+                Encoding.Unicode.GetBytes(chars, s.Length, (byte*)data, byteCount);
+            }
             data[size] = '\0';
         }
 
@@ -863,7 +866,10 @@
         /// <returns><c>true</c> if the two strings are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(StdWString str1, string str2)
         {
-            return str1.Compare(str2);
+            fixed (char* pStr = str2)
+            {
+                return str1.Compare(new ReadOnlySpan<char>(pStr, str2.Length));
+            }
         }
 
         /// <summary>
@@ -874,7 +880,10 @@
         /// <returns><c>true</c> if the two strings are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(StdWString str1, string str2)
         {
-            return !str1.Compare(str2);
+            fixed (char* pStr = str2)
+            {
+                return !str1.Compare(new ReadOnlySpan<char>(pStr, str2.Length));
+            }
         }
 
         /// <summary>
@@ -932,7 +941,10 @@
             }
             if (obj is string str)
             {
-                return Compare(str);
+                fixed (char* pStr = str)
+                {
+                    return Compare(new ReadOnlySpan<char>(pStr, str.Length));
+                }
             }
             return false;
         }
@@ -943,12 +955,21 @@
         /// <returns>The hash code for the string.</returns>
         public override int GetHashCode()
         {
+#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
             HashCode hashCode = new();
             for (int i = 0; i < size; i++)
             {
                 hashCode.Add(data[i]);
             }
             return hashCode.ToHashCode();
+#else
+            int hash = 17;
+            for (int i = 0; i < size; i++)
+            {
+                hash = hash * 31 + data[i].GetHashCode();
+            }
+            return hash;
+#endif
         }
 
         /// <summary>

@@ -128,5 +128,28 @@
 #endif
             Marshal.FreeHGlobal((nint)ptr);
         }
+
+#if !NETSTANDARD2_1_OR_GREATER && !NET5_0_OR_GREATER
+
+        public unsafe void* Alloc(nint size)
+        {
+            return Alloc((nuint)size);
+        }
+
+        public unsafe void* Alloc(int size)
+        {
+            return Alloc((nint)size);
+        }
+
+        public unsafe void* ReAlloc(void* ptr, nint size)
+        {
+            return ReAlloc(ptr, (nuint)size);
+        }
+
+        public unsafe void* ReAlloc(void* ptr, int size)
+        {
+            return ReAlloc(ptr, (nuint)size);
+        }
+#endif
     }
 }

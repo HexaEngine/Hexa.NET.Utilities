@@ -1,4 +1,5 @@
-﻿namespace Hexa.NET.Utilities.Collections
+﻿#if NET5_0_OR_GREATER
+namespace Hexa.NET.Utilities.Collections
 {
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
@@ -35,3 +36,4 @@
         }
     }
 }
+#endif

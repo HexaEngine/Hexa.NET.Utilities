@@ -641,7 +641,7 @@
 
         public override readonly int GetHashCode()
         {
-            return HashCode.Combine((nint)items);
+            return ((nint)items).GetHashCode();
         }
 
         public static bool operator ==(UnsafeList<T> left, UnsafeList<T> right)
