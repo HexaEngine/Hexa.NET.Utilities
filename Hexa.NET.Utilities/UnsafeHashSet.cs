@@ -335,7 +335,7 @@
 
         public void CopyTo(T[] array, int arrayIndex, int count)
         {
-#if NET5_0_OR_GREATER
+#if NET7_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfNegative(arrayIndex);
             ArgumentOutOfRangeException.ThrowIfNegative(count);
 #else

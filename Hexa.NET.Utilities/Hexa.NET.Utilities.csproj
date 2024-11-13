@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net8.0;netstandard2.1</TargetFrameworks>
+		<TargetFrameworks>net9.0;net8.0;net6.0;netstandard2.1</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>12</LangVersion>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
@@ -19,7 +19,7 @@
 	<PropertyGroup>
 		<PackageId>Hexa.NET.Utilities</PackageId>
 		<AssemblyVersion>1.0.0</AssemblyVersion>
-		<PackageVersion>2.1.6</PackageVersion>
+		<PackageVersion>2.1.11</PackageVersion>
 		<Authors>Juna</Authors>
 		<AssemblyName>Hexa.NET.Utilities</AssemblyName>
 		<PackageProjectUrl>https://github.com/HexaEngine/Hexa.NET.Utilities</PackageProjectUrl>
@@ -29,6 +29,11 @@
 		<PackageTags>HexaEngine Hexa HexaGen C# .NET DotNet Sharp Windows macOS Native</PackageTags>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);1591</NoWarn>
+
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -37,7 +42,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-		<PackageReference Include="System.Memory" Version="4.5.5" />
+		<PackageReference Include="System.Memory" Version="4.6.0" />
 	</ItemGroup>
 
 

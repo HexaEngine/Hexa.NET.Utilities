@@ -30,9 +30,9 @@
         /// </summary>
         public StdWString(int capacity)
         {
-            data = AllocT<char>(capacity);
-            this.capacity = capacity;
-            ZeroMemoryT(data, capacity);
+            data = AllocT<char>(capacity + 1);
+            this.capacity = capacity + 1;
+            ZeroMemoryT(data, capacity + 1);
         }
 
         /// <summary>
@@ -45,6 +45,16 @@
             capacity = size = s.Length;
             Encoding.Unicode.GetBytes(s, new Span<byte>(data, byteCount * sizeof(char)));
             data[size] = '\0';
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StdWString"/> struct.
+        /// </summary>
+        public StdWString(char* data, int size, int capacity)
+        {
+            this.data = data;
+            this.size = size;
+            this.capacity = capacity;
         }
 
         /// <summary>
@@ -245,14 +255,90 @@
         }
 
         /// <summary>
+        /// Appends the contents of a UTF16 string to the end of the current <see cref="StdWString"/>.
+        /// </summary>
+        /// <param name="c">The pointer to append.</param>
+        /// <param name="length">The length of the pointer</param>
+        public void Append(char* c, int length)
+        {
+            EnsureCapacity(size + length);
+            MemcpyT(c, data + size, length);
+            size += length;
+        }
+
+        /// <summary>
+        /// Appends the contents of a UTF16 null-terminated string to the end of the current <see cref="StdWString"/>.
+        /// </summary>
+        /// <param name="c">The pointer to append.</param>
+        public void Append(char* c)
+        {
+            int length = StrLen(c);
+            Append(c, length);
+        }
+
+        /// <summary>
         /// Appends the contents of another <see cref="StdWString"/> to the end of the current <see cref="StdWString"/>.
         /// </summary>
         /// <param name="c">The <see cref="StdWString"/> to append.</param>
         public void Append(StdWString c)
         {
-            EnsureCapacity(size + c.size);
-            MemcpyT(c.data, data + size, c.size);
-            size += c.size;
+            Append(c.Data, c.Size);
+        }
+
+        /// <summary>
+        /// Appends the contents of a char Span to the end of the current <see cref="StdWString"/>.
+        /// </summary>
+        /// <param name="c">The Span to append.</param>
+        public void Append(ReadOnlySpan<char> c)
+        {
+            fixed (char* pc = c)
+            {
+                Append(pc, c.Length);
+            }
+        }
+
+        /// <summary>
+        /// Appends the contents of a UTF8 string to the end of the current <see cref="StdWString"/>.
+        /// </summary>
+        /// <param name="utf8">The pointer to append.</param>
+        /// <param name="length">The length of the pointer</param>
+        public void Append(byte* utf8, int length)
+        {
+            int charCount = Encoding.UTF8.GetCharCount(utf8, length);
+            EnsureCapacity(size + charCount);
+            Encoding.UTF8.GetChars(utf8, length, data + size, charCount);
+            size += charCount;
+        }
+
+        /// <summary>
+        /// Appends the contents of a UTF8 null-terminated string to the end of the current <see cref="StdWString"/>.
+        /// </summary>
+        /// <param name="c">The pointer to append.</param>
+        public void Append(byte* c)
+        {
+            int length = StrLen(c);
+            Append(c, length);
+        }
+
+        /// <summary>
+        /// Appends the contents of another <see cref="StdString"/> to the end of the current <see cref="StdWString"/>.
+        /// </summary>
+        /// <param name="c">The <see cref="StdString"/> to append.</param>
+        public void Append(StdString c)
+        {
+            Append(c.Data, c.Size);
+        }
+
+        /// <summary>
+        /// Appends the contents of a byte Span to the end of the current <see cref="StdWString"/>.
+        /// </summary>
+        /// <param name="c">The pointer to append.</param>
+        public void Append(ReadOnlySpan<byte> c)
+        {
+            fixed (byte* pc = c)
+            {
+                Append(pc, c.Length);
+            }
         }
 
         /// <summary>
@@ -872,6 +958,19 @@
         public override readonly string ToString()
         {
             return new(data, 0, size);
+        }
+
+        /// <summary>
+        /// Converts the string to a StdString.
+        /// </summary>
+        /// <returns></returns>
+        public readonly StdString ToUTF8String()
+        {
+            int byteCount = Encoding.UTF8.GetByteCount(data, size);
+            byte* newData = AllocT<byte>(byteCount + 1);
+            Encoding.UTF8.GetBytes(data, size, newData, byteCount);
+            newData[byteCount] = 0; // null terminator
+            return new(newData, byteCount, byteCount);
         }
 
         /// <summary>
