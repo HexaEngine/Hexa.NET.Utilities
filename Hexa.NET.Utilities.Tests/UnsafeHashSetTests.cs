@@ -6,6 +6,36 @@
     public class UnsafeHashSetTests
     {
         [Test]
+        public void TestEnumerator()
+        {
+            UnsafeHashSet<int> dict = default;
+            dict.Add(10);
+            dict.Add(20);
+            dict.Add(30);
+
+            IEnumerator<int> enumerator = dict.GetEnumerator();
+
+            // Act
+            var result = new List<int>();
+            while (enumerator.MoveNext())
+            {
+                result.Add(enumerator.Current);
+            }
+
+            // Assert
+            var expected = new List<int>
+            {
+                10,
+                20,
+                30
+            };
+
+            Assert.That(result, Is.EquivalentTo(expected));
+
+            dict.Release();
+        }
+
+        [Test]
         public void TestAdd()
         {
             // Arrange
@@ -205,7 +235,7 @@
             bool contains = list.Contains(42);
 
             // Assert
-            Assert.IsTrue(contains);
+            Assert.That(contains, Is.True);
 
             list.Release();
         }
@@ -239,7 +269,7 @@
             bool removed = list.Remove(42);
 
             // Assert
-            Assert.IsTrue(removed);
+            Assert.That(removed, Is.True);
             Assert.That(list.Count, Is.EqualTo(1));
             Assert.That(list[0], Is.EqualTo(24));
 

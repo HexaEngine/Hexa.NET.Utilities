@@ -369,12 +369,12 @@
 
         public readonly IEnumerator<T> GetEnumerator()
         {
-            return new Enumerator();
+            return new Enumerator(this);
         }
 
         readonly IEnumerator IEnumerable.GetEnumerator()
         {
-            return new Enumerator();
+            return new Enumerator(this);
         }
 
         public void UnionWith(IEnumerable<T> other)
@@ -758,24 +758,19 @@
             private UnsafeHashSet<T> hashSet;
             private int index;
             private int itemIndex;
-            private Entry* current;
+            private T current;
 
             public Enumerator(UnsafeHashSet<T> hashSet)
             {
                 this.hashSet = hashSet;
                 index = 0;
-                current = null;
             }
 
             public T Current
             {
                 get
                 {
-                    if (current == null)
-                    {
-                        throw new InvalidOperationException("The enumerator is positioned before the first element or after the last element.");
-                    }
-                    return current->Value;
+                    return current;
                 }
             }
 
@@ -810,12 +805,12 @@
                         continue;
                     }
 
-                    current = entry;
+                    current = entry->Value;
                     index = i + 1;
                     itemIndex++;
                     return true;
                 }
-                current = null;
+                current = default;
                 return false;
             }
 
@@ -823,7 +818,7 @@
             {
                 index = 0;
                 itemIndex = 0;
-                current = null;
+                current = default;
             }
         }
 

@@ -13,14 +13,14 @@
 
         private const float loadFactor = 0.75f;
 
-        internal enum EntryFlags : byte
+        public enum EntryFlags : byte
         {
             Empty = 0,
             Tombstone = 1,
             Filled = 2
         }
 
-        internal struct Entry
+        public struct Entry
         {
             public uint HashCode;
             public TKey Key;
@@ -116,6 +116,14 @@
             }
 
             TrimExcess();
+        }
+
+        public UnsafeDictionary(Entry* buckets, int capacity, int size, delegate*<TKey, TKey, bool>* comparer)
+        {
+            this.buckets = buckets;
+            this.capacity = capacity;
+            this.size = size;
+            this.comparer = comparer;
         }
 
         public void Release()
@@ -470,7 +478,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.size - 1)
+                if (itemIndex >= dictionary.size)
                 {
                     return false;
                 }
@@ -544,7 +552,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.size - 1)
+                if (itemIndex >= dictionary.size)
                 {
                     return false;
                 }
@@ -618,7 +626,7 @@
 
             public bool MoveNext()
             {
-                if (itemIndex >= dictionary.size - 1)
+                if (itemIndex >= dictionary.size)
                 {
                     return false;
                 }

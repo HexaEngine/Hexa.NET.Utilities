@@ -6,6 +6,73 @@
     public class UnsafeDictionaryTests
     {
         [Test]
+        public void TestEnumerator()
+        {
+            UnsafeDictionary<uint, int> dict = default;
+            dict[1] = 10;
+            dict[2] = 20;
+            dict[3] = 30;
+
+            IEnumerator<KeyValuePair<uint, int>> enumerator = dict.GetEnumerator();
+
+            // Act
+            var result = new List<KeyValuePair<uint, int>>();
+            while (enumerator.MoveNext())
+            {
+                result.Add(enumerator.Current);
+            }
+
+            // Assert
+            var expected = new List<KeyValuePair<uint, int>>
+            {
+                new KeyValuePair<uint, int>(1, 10),
+                new KeyValuePair<uint, int>(2, 20),
+                new KeyValuePair<uint, int>(3, 30)
+            };
+
+            Assert.That(result, Is.EquivalentTo(expected));
+
+            dict.Release();
+        }
+
+        [Test]
+        public void TestKeyValueEnumerator()
+        {
+            // Arrange
+            UnsafeDictionary<uint, int> dict = new UnsafeDictionary<uint, int>();
+
+            // Populate the dictionary with data
+            dict[1] = 10;
+            dict[2] = 20;
+            dict[3] = 30;
+
+            // Act & Assert for Key Enumerator
+            IEnumerator<uint> keyEnumerator = dict.Keys.GetEnumerator();
+            var keyResult = new List<uint>();
+            while (keyEnumerator.MoveNext())
+            {
+                keyResult.Add(keyEnumerator.Current);
+            }
+
+            var expectedKeys = new List<uint> { 1, 2, 3 };
+            Assert.That(keyResult, Is.EquivalentTo(expectedKeys));
+
+            // Act & Assert for Value Enumerator
+            IEnumerator<int> valueEnumerator = dict.Values.GetEnumerator();
+            var valueResult = new List<int>();
+            while (valueEnumerator.MoveNext())
+            {
+                valueResult.Add(valueEnumerator.Current);
+            }
+
+            var expectedValues = new List<int> { 10, 20, 30 };
+            Assert.That(valueResult, Is.EquivalentTo(expectedValues));
+
+            // Clean up
+            dict.Release();
+        }
+
+        [Test]
         public void TestInitialAdd()
         {
             UnsafeDictionary<uint, int> dict = default;
@@ -64,7 +131,7 @@
 
             dict.Remove(1);
 
-            Assert.IsFalse(dict.ContainsKey(1));
+            Assert.That(dict.ContainsKey(1), Is.False);
             Assert.That(dict[2], Is.EqualTo(3));
 
             foreach (var item in dict)
@@ -83,7 +150,7 @@
             Assert.DoesNotThrow(() => dict.Remove(2));
 
             Assert.That(dict[1], Is.EqualTo(2));
-            Assert.IsFalse(dict.ContainsKey(2));
+            Assert.That(dict.ContainsKey(2), Is.False);
 
             foreach (var item in dict)
             {
@@ -96,7 +163,7 @@
         public void TestEmptyDictionary()
         {
             UnsafeDictionary<uint, int> dict = default;
-            Assert.IsEmpty(dict);
+            Assert.That(dict, Is.Empty);
 
             foreach (var item in dict)
             {
@@ -120,7 +187,7 @@
             dict[2] = 3;
 
             // Since dictionary is reallocated, previous values should not exist
-            Assert.IsFalse(dict.ContainsKey(1));
+            Assert.That(dict.ContainsKey(1), Is.False);
             Assert.That(dict[2], Is.EqualTo(3));
 
             foreach (var item in dict)
@@ -129,7 +196,7 @@
             }
 
             // Verify that the dictionary's capacity and size have been updated correctly
-            Assert.Greater(dict.Capacity, 0);
+            Assert.That(dict.Capacity, Is.EqualTo(3));
             Assert.That(dict.Size, Is.EqualTo(1));
 
             // Release the dictionary again
