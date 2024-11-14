@@ -40,12 +40,11 @@
         /// </summary>
         public StdWString(string s)
         {
-            var byteCount = Encoding.Unicode.GetByteCount(s) / sizeof(char);
-            data = AllocT<char>(byteCount + 1);
+            data = AllocT<char>(s.Length + 1);
             capacity = size = s.Length;
             fixed (char* chars = s)
             {
-                Encoding.Unicode.GetBytes(chars, s.Length, (byte*)data, byteCount);
+                MemcpyT(chars, data, size);
             }
             data[size] = '\0';
         }
