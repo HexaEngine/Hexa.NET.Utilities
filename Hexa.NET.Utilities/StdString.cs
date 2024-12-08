@@ -924,6 +924,7 @@
         /// </summary>
         /// <param name="str">The character sequence to search for.</param>
         /// <param name="pos">The starting position for the search.</param>
+        /// <param name="comparer">The comparer to comparing this string.</param>
         /// <returns>The index of the first occurrence of the character sequence, or -1 if it is not found.</returns>
         public readonly int Find(ReadOnlySpan<char> str, int pos, IEqualityComparer<byte> comparer)
         {

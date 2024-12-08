@@ -2,6 +2,7 @@
 {
     using System;
     using System.Runtime.CompilerServices;
+    using System.Text;
 
     // Implemented:
     // StrLen
@@ -434,6 +435,19 @@
                 }
             }
             return length;
+        }
+
+        public static int GetByteCountUTF8(string str)
+        {
+            return Encoding.UTF8.GetByteCount(str);
+        }
+
+        public static void EncodeStringUTF8(string str, byte* dst, int length)
+        {
+            fixed (char* src = str)
+            {
+                Encoding.UTF8.GetBytes(src, str.Length, dst, length);
+            }
         }
     }
 }

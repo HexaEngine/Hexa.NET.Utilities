@@ -3,7 +3,7 @@
     using System.Collections.Concurrent;
 
     /// <summary>
-    /// A thread-safe object pool for <see cref="{T}"/> instances.
+    /// A thread-safe object pool for <typeparamref name="T"/> instances.
     /// </summary>
     /// <typeparam name="T">The type of elements in the lists.</typeparam>
     public class ObjectPool<T> where T : new()
@@ -22,9 +22,9 @@
         public int MaxItemsThreshold { get => maxItemsThreshold; set => maxItemsThreshold = value; }
 
         /// <summary>
-        /// Rents a <see cref="{T}"/> instance from the pool. If the pool is empty, a new instance is created.
+        /// Rents a <typeparamref name="T"/> instance from the pool. If the pool is empty, a new instance is created.
         /// </summary>
-        /// <returns>A <see cref="{T}"/> instance from the pool or a new instance if the pool is empty.</returns>
+        /// <returns>A <typeparamref name="T"/> instance from the pool or a new instance if the pool is empty.</returns>
         public T Rent()
         {
             if (pool.IsEmpty)
@@ -42,9 +42,9 @@
         }
 
         /// <summary>
-        /// Returns a rented <see cref="{T}"/> instance to the pool after clearing its contents.
+        /// Returns a rented <typeparamref name="T"/> instance to the pool after clearing its contents.
         /// </summary>
-        /// <param name="obj">The <see cref="{T}"/> instance to return to the pool.</param>
+        /// <param name="obj">The <typeparamref name="T"/> instance to return to the pool.</param>
         public void Return(T obj)
         {
             if (pool.Count > maxItemsThreshold)
@@ -59,7 +59,7 @@
         }
 
         /// <summary>
-        /// Clears the pool, removing all <see cref="{T}"/> instances from it.
+        /// Clears the pool, removing all <typeparamref name="T"/> instances from it.
         /// </summary>
         public void Clear()
         {

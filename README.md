@@ -5,6 +5,20 @@ The library is tailored to HexaEngine, but can be still used in other projects, 
 
 ## Features
 
+### UTF-8 String formatting
+- **Utf8Formatter**
+  - A low level implementation for maximum performance. 
+  - **Number primitives** incl. short ushort int uint long ulong float double and culture specifics
+  - **Hexadecimal formatting**
+  - **Data size formatting** eg. 1024 => 1 KiB.
+  - **DateTimes** full format string support and culture specifics
+  - **TimeSpans** full format string support and culture specifics
+- **`StrBuilder`**:
+  - a lightweight string builder allowing use of stackalloc for temporary strings to prevent GC-Pressure.
+
+### IO Utilities
+- **Faster File System Enumeration with prefetching metadata**
+
 ### Data Structures
 - **Standard-like Strings**:
   - `StdWString` (UTF-16)
