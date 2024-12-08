@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hexa.NET.Utilities.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hexa.NET.Unsafe.Analyzers", "Hexa.NET.Unsafe.Analyzers\Hexa.NET.Unsafe.Analyzers.csproj", "{5F79B930-69FB-4395-AAC5-5A776D94F2AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hexa.NET.Unsafe.Analyzers.Tests", "Hexa.NET.Unsafe.Analyzers.Tests\Hexa.NET.Unsafe.Analyzers.Tests.csproj", "{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,14 +51,6 @@ Global
 		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Release|x86.ActiveCfg = Release|Any CPU
 		{5F79B930-69FB-4395-AAC5-5A776D94F2AE}.Release|x86.Build.0 = Release|Any CPU
-		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Debug|x86.Build.0 = Debug|Any CPU
-		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Release|x86.ActiveCfg = Release|Any CPU
-		{BBD47E54-F4BD-4D85-928B-8203C3C4B73C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
