@@ -1,7 +1,5 @@
-# HexaEngine Utilities Library
-
-The Utilities library for HexaEngine provides a set of essential tools and utilities that enhance the functionality and performance of your applications. It includes robust data structures, memory management utilities, thread-safe components, and more.
-The library is tailored to HexaEngine, but can be still used in other projects, that require low GC Pressure.
+# Hexa.NET.Utilities
+This repository provides a collection of high-performance utilities designed to address common programming needs while maintaining low GC pressure and maximizing performance.
 
 ## Features
 
