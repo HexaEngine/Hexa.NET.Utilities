@@ -113,6 +113,11 @@
             Index += Utf8Formatter.Format(value, Buffer + Index, Count - Index, format, cultureInfo);
         }
 
+        public void Append(TimeSpan value, string format)
+        {
+            Index += Utf8Formatter.Format(value, Buffer + Index, Count - Index, format);
+        }
+
         public void Append(TimeSpan value)
         {
             Index += Utf8Formatter.Format(value, Buffer + Index, Count - Index);
