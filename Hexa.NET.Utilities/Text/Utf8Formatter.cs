@@ -340,7 +340,12 @@
                 if (fraction < 1e-14) break;
             }
 
-            while (*(buffer - 1) == '0' || *(buffer - 1) == '.')
+            while (*(buffer - 1) == '0')
+            {
+                buffer--;
+            }
+
+            while (*(buffer - 1) == '.')
             {
                 buffer--;
             }
@@ -418,7 +423,12 @@
                 if (fraction < 1e-14) break;
             }
 
-            while (*(buffer - 1) == '0' || *(buffer - 1) == '.')
+            while (*(buffer - 1) == '0')
+            {
+                buffer--;
+            }
+            
+            while (*(buffer - 1) == '.')
             {
                 buffer--;
             }
