@@ -46,7 +46,9 @@
 #endif
 
     /// <summary>
-    /// Will be moved to Hexa.NET.Utilities later.
+    /// Provides high-performance formatting utilities for UTF-8 encoded strings using raw pointers.
+    /// Designed for scenarios where direct memory manipulation is needed for speed or low-level control.
+    /// This class operates exclusively on raw pointers and does not perform any managed string allocations.
     /// </summary>
     public static class Utf8Formatter
     {
