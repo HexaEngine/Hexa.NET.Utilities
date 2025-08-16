@@ -43,6 +43,7 @@
             return false;
         }
     }
+
 #endif
 
     /// <summary>
@@ -1019,7 +1020,7 @@
             for (int i = 0; i < utf16Length; i++)
             {
                 if (utf8Bytes >= utf8BytesEnd)
-                    return (int)(utf8Bytes - start);
+                    return 0;
 
                 char utf16Char = utf16Chars[i];
 
@@ -1035,7 +1036,7 @@
                     case <= 0x7FF:
                         // 2-byte UTF-8
                         if (utf8Bytes + 1 >= utf8BytesEnd)
-                            return (int)(utf8Bytes - start);
+                            return 0;
 
                         *utf8Bytes = (byte)(0xC0 | (codePoint >> 6));
                         utf8Bytes++;
@@ -1043,7 +1044,7 @@
                         utf8Bytes++;
                         break;
 
-                    case >= 0xD800 and <= 0xDFFF:
+                    case >= 0xD800 and <= 0xDBFF:
                         if (i + 1 < utf16Length)
                         {
                             char lowSurrogate = utf16Chars[i + 1];
@@ -1054,7 +1055,7 @@
 
                                 // This results in a 4-byte UTF-8 sequence
                                 if (utf8Bytes + 3 >= utf8BytesEnd)
-                                    return (int)(utf8Bytes - start);
+                                    return 0;
 
                                 *utf8Bytes = (byte)(0xF0 | (codePointSurrogate >> 18));
                                 utf8Bytes++;
@@ -1071,12 +1072,12 @@
                             }
                         }
 
-                        return (int)(utf8Bytes - start);
+                        return 0;
 
                     default:
                         // 3-byte UTF-8
                         if (utf8Bytes + 2 >= utf8BytesEnd)
-                            return (int)(utf8Bytes - start);
+                            return 0;
 
                         *utf8Bytes = (byte)(0xE0 | (codePoint >> 12));
                         utf8Bytes++;
@@ -1520,35 +1521,36 @@
                 _ => throw new FormatException("Unknown format specifier")
             };
         }
-        public unsafe static int Format(TimeSpan timeSpan, Span<byte> buf)
+
+        public static unsafe int Format(TimeSpan timeSpan, Span<byte> buf)
         {
             fixed (byte* pBuf = buf)
                 return Format(timeSpan, pBuf, buf.Length, TimeSpanDefaultPattern, CultureInfo.CurrentCulture);
         }
 
-        public unsafe static int Format(TimeSpan timeSpan, Span<byte> buf, string format)
+        public static unsafe int Format(TimeSpan timeSpan, Span<byte> buf, string format)
         {
             fixed (byte* pBuf = buf)
                 return Format(timeSpan, pBuf, buf.Length, format, CultureInfo.CurrentCulture);
         }
 
-        public unsafe static int Format(TimeSpan timeSpan, Span<byte> buf, string format, CultureInfo cultureInfo)
+        public static unsafe int Format(TimeSpan timeSpan, Span<byte> buf, string format, CultureInfo cultureInfo)
         {
             fixed (byte* pBuf = buf)
                 return Format(timeSpan, pBuf, buf.Length, format, cultureInfo);
         }
 
-        public unsafe static int Format(TimeSpan timeSpan, byte* buf, int bufSize)
+        public static unsafe int Format(TimeSpan timeSpan, byte* buf, int bufSize)
         {
             return Format(timeSpan, buf, bufSize, TimeSpanDefaultPattern, CultureInfo.CurrentCulture);
         }
 
-        public unsafe static int Format(TimeSpan timeSpan, byte* buf, int bufSize, string format)
+        public static unsafe int Format(TimeSpan timeSpan, byte* buf, int bufSize, string format)
         {
             return Format(timeSpan, buf, bufSize, format, CultureInfo.CurrentCulture);
         }
 
-        public unsafe static int Format(TimeSpan timeSpan, byte* buf, int bufSize, string format, CultureInfo cultureInfo)
+        public static unsafe int Format(TimeSpan timeSpan, byte* buf, int bufSize, string format, CultureInfo cultureInfo)
         {
             if (bufSize == 0)
             {
@@ -1752,7 +1754,7 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe static int IndexOf(char* str, char* strEnd, char target)
+        private static unsafe int IndexOf(char* str, char* strEnd, char target)
         {
             char* start = str;
             while (str != strEnd && *str != target)
@@ -1843,7 +1845,7 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe static int CountAhead(char** format, char* formatEnd, char target, int max)
+        private static unsafe int CountAhead(char** format, char* formatEnd, char target, int max)
         {
             int count = 0;
             char* pChar = *format;
