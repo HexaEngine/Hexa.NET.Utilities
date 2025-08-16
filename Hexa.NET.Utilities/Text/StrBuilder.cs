@@ -42,6 +42,22 @@
             Index += written;
         }
 
+        public void Append(byte* cstr)
+        {
+            if (cstr == null) return;
+
+            byte* start = Buffer + Index;
+            byte* ptr = start;
+            byte* end = Buffer + Count;
+
+            while (*cstr != '\0' && ptr != end)
+            {
+                *ptr++ = *cstr++;
+            }
+            int written = (int)(ptr - start);
+            Index += written;
+        }
+
         public void Append(char c)
         {
             Index += Utf8Formatter.ConvertUtf16ToUtf8(c, Buffer + Index, Count - Index);
