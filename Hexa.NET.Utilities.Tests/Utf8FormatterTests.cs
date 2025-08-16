@@ -49,4 +49,52 @@ public class Utf8FormatterTests
         // Assert
         Assert.That(Encoding.UTF8.GetString(utf8Span), Is.EqualTo(expected));
     }
+
+    [TestCase(10, 0, ".","10")]
+    [TestCase(10, 0, "\uFF0C","10")]
+    [TestCase(0.75f, 2, ".","0.75")]
+    [TestCase(0.75f, 2, "\uFF0C","0\uFF0C75")]
+    public unsafe void FormatFloatCultureTest(float value, int digit, string separator, string expected)
+    {
+        // Arrange
+        byte* buffer = stackalloc byte[128];
+        var culture = new CultureInfo( "", false )
+        {
+            NumberFormat =
+            {
+                CurrencyDecimalSeparator = separator
+            }
+        };
+
+        // Act
+        int len = Utf8Formatter.Format(value, buffer, 128, culture, digit);
+        ReadOnlySpan<byte> utf8Span = new ReadOnlySpan<byte>(buffer, len);
+
+        // Assert
+        Assert.That(Encoding.UTF8.GetString(utf8Span), Is.EqualTo(expected));
+    }
+
+    [TestCase(10, 0, ".","10")]
+    [TestCase(10, 0, "\uFF0C","10")]
+    [TestCase(0.75, 2, ".","0.75")]
+    [TestCase(0.75, 2, "\uFF0C","0\uFF0C75")]
+    public unsafe void FormatDoubleCultureTest(double value, int digit, string separator, string expected)
+    {
+        // Arrange
+        byte* buffer = stackalloc byte[128];
+        var culture = new CultureInfo( "", false )
+        {
+            NumberFormat =
+            {
+                CurrencyDecimalSeparator = separator
+            }
+        };
+
+        // Act
+        int len = Utf8Formatter.Format(value, buffer, 128, culture, digit);
+        var utf8Span = new ReadOnlySpan<byte>(buffer, len);
+
+        // Assert
+        Assert.That(Encoding.UTF8.GetString(utf8Span), Is.EqualTo(expected));
+    }
 }

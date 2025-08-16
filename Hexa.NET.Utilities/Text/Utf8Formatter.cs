@@ -326,7 +326,9 @@
                 return (int)(buffer - start);
             }
 
+            byte* beforeSeparator = buffer;
             buffer += ConvertUtf16ToUtf8(format.CurrencyDecimalSeparator, buffer, (int)(end - buffer));
+            byte* afterSeparator = buffer;
 
             digits = digits >= 0 ? digits : 7;
 
@@ -340,14 +342,14 @@
                 if (fraction < 1e-14) break;
             }
 
-            while (*(buffer - 1) == '0')
+            while (buffer != afterSeparator && *(buffer - 1) == '0')
             {
                 buffer--;
             }
 
-            while (*(buffer - 1) == '.')
+            if (buffer == afterSeparator)
             {
-                buffer--;
+                buffer = beforeSeparator;
             }
 
         end:
@@ -409,7 +411,9 @@
                 return (int)(buffer - start);
             }
 
+            byte* beforeSeparator = buffer;
             buffer += ConvertUtf16ToUtf8(format.CurrencyDecimalSeparator, buffer, (int)(end - buffer));
+            byte* afterSeparator = buffer;
 
             digits = digits >= 0 ? digits : 7;
 
@@ -423,14 +427,14 @@
                 if (fraction < 1e-14) break;
             }
 
-            while (*(buffer - 1) == '0')
+            while (buffer != afterSeparator && *(buffer - 1) == '0')
             {
                 buffer--;
             }
-            
-            while (*(buffer - 1) == '.')
+
+            if (buffer == afterSeparator)
             {
-                buffer--;
+                buffer = beforeSeparator;
             }
 
         end:
