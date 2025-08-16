@@ -47,7 +47,9 @@
 #endif
 
     /// <summary>
-    /// Will be moved to Hexa.NET.Utilities later.
+    /// Provides high-performance formatting utilities for UTF-8 encoded strings using raw pointers.
+    /// Designed for scenarios where direct memory manipulation is needed for speed or low-level control.
+    /// This class operates exclusively on raw pointers and does not perform any managed string allocations.
     /// </summary>
     public static class Utf8Formatter
     {
@@ -327,7 +329,9 @@
                 return (int)(buffer - start);
             }
 
+            byte* beforeSeparator = buffer;
             buffer += ConvertUtf16ToUtf8(format.CurrencyDecimalSeparator, buffer, (int)(end - buffer));
+            byte* afterSeparator = buffer;
 
             digits = digits >= 0 ? digits : 7;
 
@@ -341,9 +345,14 @@
                 if (fraction < 1e-14) break;
             }
 
-            while (*(buffer - 1) == '0' || *(buffer - 1) == '.')
+            while (buffer != afterSeparator && *(buffer - 1) == '0')
             {
                 buffer--;
+            }
+
+            if (buffer == afterSeparator)
+            {
+                buffer = beforeSeparator;
             }
 
         end:
@@ -405,7 +414,9 @@
                 return (int)(buffer - start);
             }
 
+            byte* beforeSeparator = buffer;
             buffer += ConvertUtf16ToUtf8(format.CurrencyDecimalSeparator, buffer, (int)(end - buffer));
+            byte* afterSeparator = buffer;
 
             digits = digits >= 0 ? digits : 7;
 
@@ -419,9 +430,14 @@
                 if (fraction < 1e-14) break;
             }
 
-            while (*(buffer - 1) == '0' || *(buffer - 1) == '.')
+            while (buffer != afterSeparator && *(buffer - 1) == '0')
             {
                 buffer--;
+            }
+
+            if (buffer == afterSeparator)
+            {
+                buffer = beforeSeparator;
             }
 
         end:
