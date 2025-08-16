@@ -3,7 +3,7 @@
     using System;
     using System.Globalization;
 
-    public unsafe ref struct StrBuilder
+    public unsafe struct StrBuilder
     {
         public int Index;
         public byte* Buffer;

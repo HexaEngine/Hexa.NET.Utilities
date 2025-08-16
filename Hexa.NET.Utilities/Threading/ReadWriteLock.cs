@@ -42,10 +42,8 @@
 
         public void BeginRead()
         {
-            readLock.Reset();
-
             writeLock.Wait();
-
+            readLock.Reset();
             readSemaphore.Wait();
         }
 
@@ -57,8 +55,8 @@
 
         public void EndRead()
         {
-            readSemaphore.Release();
-            if (readSemaphore.CurrentCount == maxReader)
+            var value = readSemaphore.Release();
+            if (value == maxReader - 1)
             {
                 readLock.Set();
             }
@@ -66,10 +64,8 @@
 
         public void BeginWrite()
         {
-            writeLock.Reset();
-
             readLock.Wait();
-
+            writeLock.Reset();
             writeSemaphore.Wait();
         }
 
@@ -81,9 +77,8 @@
 
         public void EndWrite()
         {
-            writeSemaphore.Release();
-
-            if (writeSemaphore.CurrentCount == maxWriter)
+            var value = writeSemaphore.Release();
+            if (value == maxWriter - 1)
             {
                 writeLock.Set();
             }

@@ -10,6 +10,7 @@
         private int capacity;
         private int size;
         private void* comparer; // use void* to avoid problems with Visual Studio; Visual Studio has a problem with generic delegate pointers.
+        private void* hashcode;
 
         private const float loadFactor = 0.75f;
 
@@ -63,9 +64,9 @@
             }
         }
 
-        private readonly static Entry Empty = new(0, default, default, EntryFlags.Empty);
+        private static readonly Entry Empty = new(0, default, default, EntryFlags.Empty);
 
-        private readonly static Entry Tombstone = new(0, default, default, EntryFlags.Tombstone);
+        private static readonly Entry Tombstone = new(0, default, default, EntryFlags.Tombstone);
 
         public UnsafeDictionary(int initialCapacity)
         {
@@ -101,9 +102,10 @@
             TrimExcess();
         }
 
-        public UnsafeDictionary(IEnumerable<KeyValuePair<TKey, TValue>> keyValuePairs, delegate*<TKey, TKey, bool> comparer)
+        public UnsafeDictionary(IEnumerable<KeyValuePair<TKey, TValue>> keyValuePairs, delegate*<TKey, TKey, bool> comparer, delegate*<TKey, int> hashcode)
         {
             this.comparer = comparer;
+            this.hashcode = hashcode;
 
             if (keyValuePairs is ICollection<KeyValuePair<TKey, TValue>> collection)
             {
@@ -118,12 +120,13 @@
             TrimExcess();
         }
 
-        public UnsafeDictionary(Entry* buckets, int capacity, int size, delegate*<TKey, TKey, bool>* comparer)
+        public UnsafeDictionary(Entry* buckets, int capacity, int size, delegate*<TKey, TKey, bool>* comparer, delegate*<TKey, int> hashcode)
         {
             this.buckets = buckets;
             this.capacity = capacity;
             this.size = size;
             this.comparer = comparer;
+            this.hashcode = hashcode;
         }
 
         public void Release()
@@ -226,6 +229,16 @@
             return ((delegate*<TKey, TKey, bool>)comparer)(x, y);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private readonly int GetHashCode(TKey x)
+        {
+            if (hashcode == null)
+            {
+                return x.GetHashCode();
+            }
+            return ((delegate*<TKey, int>)hashcode)(x);
+        }
+
         public void Grow(int capacity)
         {
             Capacity = HashHelpers.ExpandPrime(capacity);
@@ -248,7 +261,7 @@
         {
             EnsureCapacity(size + 1);
 
-            uint hashCode = (uint)key.GetHashCode();
+            uint hashCode = (uint)GetHashCode(key);
 
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
@@ -269,7 +282,7 @@
         {
             EnsureCapacity(size + 1);
 
-            uint hashCode = (uint)key.GetHashCode();
+            uint hashCode = (uint)GetHashCode(key);
 
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
@@ -288,7 +301,7 @@
 
         public readonly bool ContainsKey(TKey key)
         {
-            uint hashCode = (uint)key.GetHashCode();
+            uint hashCode = (uint)GetHashCode(key);
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
             return entry->HashCode == hashCode;
         }
@@ -300,7 +313,7 @@
                 return false;
             }
 
-            uint hashCode = (uint)key.GetHashCode();
+            uint hashCode = (uint)GetHashCode(key);
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
             if (!entry->IsFilled)
@@ -322,7 +335,7 @@
                 return false;
             }
 
-            uint hashCode = (uint)key.GetHashCode();
+            uint hashCode = (uint)GetHashCode(key);
             Entry* entry = FindEntry(buckets, capacity, key, hashCode);
 
             if (!entry->IsFilled)
@@ -830,6 +843,7 @@
             result.buckets = AllocT<Entry>(capacity);
             result.size = size;
             result.comparer = comparer;
+            result.hashcode = hashcode;
             MemcpyT(buckets, result.buckets, capacity);
             return result;
         }

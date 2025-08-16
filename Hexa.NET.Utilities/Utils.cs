@@ -38,132 +38,9 @@
         /// </summary>
         /// <param name="a">Pointer to the first memory location.</param>
         /// <param name="b">Pointer to the second memory location.</param>
-        public static unsafe void SwapT<T>(T* a, T* b) where T : unmanaged
-        {
-            (*b, *a) = (*a, *b);
-        }
-
-        /// <summary>
-        /// Performs a quicksort on the given array.
-        /// </summary>
-        /// <param name="array">Pointer to the array to be sorted.</param>
-        /// <param name="elements">Number of elements in the array.</param>
-        /// <param name="size">Size of each element in bytes.</param>
-        /// <param name="compare">Comparison function for elements.</param>
-        public static unsafe void QSort(void* array, int elements, int size, Func<Pointer, Pointer, int> compare)
-        {
-            if (elements <= 1)
-            {
-                return;
-            }
-
-            int pivotIndex = Partition(array, elements, size, compare);
-            QSort(array, pivotIndex, size, compare);
-            QSort((byte*)array + (pivotIndex + 1) * size, elements - (pivotIndex + 1), size, compare);
-        }
-
-        /// <summary>
-        /// Partitions the array for quicksort.
-        /// </summary>
-        /// <param name="array">Pointer to the array to be partitioned.</param>
-        /// <param name="elements">Number of elements in the array.</param>
-        /// <param name="size">Size of each element in bytes.</param>
-        /// <param name="compare">Comparison function for elements.</param>
-        /// <returns>Index of the partitioning element.</returns>
-        public static unsafe int Partition(void* array, int elements, int size, Func<Pointer, Pointer, int> compare)
-        {
-            void* pivot = (byte*)array + elements / 2 * size;
-            int left = 0;
-            int right = elements - 1;
-
-            while (left <= right)
-            {
-                while (compare((byte*)array + left * size, pivot) < 0)
-                {
-                    left++;
-                }
-
-                while (compare((byte*)array + right * size, pivot) > 0)
-                {
-                    right--;
-                }
-
-                if (left <= right)
-                {
-                    Swap((byte*)array + left * size, (byte*)array + right * size, size);
-                    left++;
-                    right--;
-                }
-            }
-
-            return right;
-        }
-
-        /// <summary>
-        /// Swaps the values of two elements using pointers.
-        /// </summary>
-        /// <typeparam name="T">Type of the elements.</typeparam>
-        /// <param name="a">Pointer to the first element.</param>
-        /// <param name="b">Pointer to the second element.</param>
         public static unsafe void Swap<T>(T* a, T* b) where T : unmanaged
         {
             (*b, *a) = (*a, *b);
-        }
-
-        /// <summary>
-        /// Performs a quicksort on the given array.
-        /// </summary>
-        /// <typeparam name="T">Type of the elements.</typeparam>
-        /// <param name="array">Pointer to the array to be sorted.</param>
-        /// <param name="elements">Number of elements in the array.</param>
-        /// <param name="compare">Comparison function for elements.</param>
-        public static unsafe void QSort<T>(T* array, int elements, Func<Pointer<T>, Pointer<T>, int> compare) where T : unmanaged
-        {
-            if (elements <= 1)
-            {
-                return;
-            }
-
-            int pivotIndex = Partition(array, elements, compare);
-            QSort(array, pivotIndex, compare);
-            QSort(array + (pivotIndex + 1), elements - (pivotIndex + 1), compare);
-        }
-
-        /// <summary>
-        /// Partitions the array for quicksort.
-        /// </summary>
-        /// <typeparam name="T">Type of the elements.</typeparam>
-        /// <param name="array">Pointer to the array to be partitioned.</param>
-        /// <param name="elements">Number of elements in the array.</param>
-        /// <param name="compare">Comparison function for elements.</param>
-        /// <returns>Index of the partitioning element.</returns>
-        public static unsafe int Partition<T>(T* array, int elements, Func<Pointer<T>, Pointer<T>, int> compare) where T : unmanaged
-        {
-            T* pivot = array + elements / 2;
-            int left = 0;
-            int right = elements - 1;
-
-            while (left <= right)
-            {
-                while (compare(array + left, pivot) < 0)
-                {
-                    left++;
-                }
-
-                while (compare(array + right, pivot) > 0)
-                {
-                    right--;
-                }
-
-                if (left <= right)
-                {
-                    Swap(array + left, array + right);
-                    left++;
-                    right--;
-                }
-            }
-
-            return right;
         }
 
         /// <summary>
@@ -1325,7 +1202,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Memset(void* ptr, byte value, int length)
         {
-            new Span<byte>(ptr, length).Fill(value);
+            Unsafe.InitBlockUnaligned(ptr, value, (uint)length);
         }
 
         /// <summary>
@@ -1337,7 +1214,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Memset(void* ptr, byte value, uint length)
         {
-            new Span<byte>(ptr, (int)length).Fill(value);
+            Unsafe.InitBlockUnaligned(ptr, value, length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

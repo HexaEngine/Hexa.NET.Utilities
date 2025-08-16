@@ -6,9 +6,17 @@
 
     public class Program
     {
-        private static void Main(string[] args)
+        private static unsafe void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<UnsafeDictionaryBenchmark>();
+            int[] array = { 10, 7, 8, 9, 1, 5 };
+            int length = array.Length;
+
+            fixed (int* ptr = array)
+            {
+                Utils.QSort(ptr, length, (a, b) => a.CompareTo(b)); // Default integer comparison
+            }
+
+            //var summary = BenchmarkRunner.Run<UnsafeDictionaryBenchmark>();
             //var summary = BenchmarkRunner.Run<UnsafeListBenchmark>();
             /*
              UnsafeDictionaryBenchmark benchmark = new();
@@ -78,7 +86,9 @@
 
         public unsafe class UnsafeDictionaryBenchmark
         {
-            private UnsafeDictionary<int, int> _unsafeDict;
+            // worst case scenario benchmark using linear keys where the hash code of int is always the value of itself.
+
+            private UnsafeDictionary<int, int> _unsafeDict;   // about 29% faster and saves 7 bytes per entry and has a way lower Std-dev.
             private Dictionary<int, int> _managedDict = new();
             private int iterationIndex = 0;
 

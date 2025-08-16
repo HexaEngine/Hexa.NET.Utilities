@@ -1,5 +1,6 @@
 ﻿namespace Hexa.NET.Utilities
 {
+    using System.Drawing;
     using System.Runtime.InteropServices;
 
     public unsafe class AllocationCallbacks : IAllocationCallbacks
@@ -90,7 +91,12 @@
 #endif
             )
         {
-            void* ptr = (void*)Marshal.AllocHGlobal((nint)size); ;
+#if NET5_0_OR_GREATER
+            void* ptr = NativeMemory.Alloc(size);
+#else
+            void* ptr = (void*)Marshal.AllocHGlobal((nint)size);
+#endif
+
 #if TRACELEAK
             Allocation allocation = new(ptr, size, name);
             lock (allocations)
@@ -110,7 +116,11 @@
 #if TRACELEAK
             Remove(ptr);
 #endif
-            ptr = (void*)Marshal.ReAllocHGlobal((nint)ptr, (nint)size); ;
+#if NET5_0_OR_GREATER
+            ptr = NativeMemory.Realloc(ptr, size);
+#else
+            ptr = (void*)Marshal.ReAllocHGlobal((nint)ptr, (nint)size);
+#endif
 #if TRACELEAK
             Allocation allocation = new(ptr, size, name);
             lock (allocations)
@@ -126,7 +136,11 @@
 #if TRACELEAK
             Remove(ptr);
 #endif
+#if NET5_0_OR_GREATER
+            NativeMemory.Free(ptr);
+#else
             Marshal.FreeHGlobal((nint)ptr);
+#endif
         }
 
 #if !NETSTANDARD2_1_OR_GREATER && !NET5_0_OR_GREATER

@@ -4,65 +4,46 @@
 
     public struct SemaphoreLight
     {
-        private int currentCount;
+        private volatile int count;
         private readonly int maxCount;
-        private int spinLock;
 
         public SemaphoreLight(int initialCount, int maxCount)
         {
-            if (initialCount > maxCount || initialCount < 0 || maxCount <= 0)
+            if (initialCount < 0 || maxCount <= 0 || initialCount > maxCount)
             {
-                throw new ArgumentException("Invalid semaphore initial or max count");
+                throw new ArgumentException("Invalid semaphore initialization values.");
             }
 
-            currentCount = initialCount;
+            count = initialCount;
             this.maxCount = maxCount;
-            spinLock = 0;
         }
+
+        public readonly int CurrentCount => count;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AcquireLock()
-        {
-            while (Interlocked.CompareExchange(ref spinLock, 1, 0) != 0)
-            {
-                Thread.Yield(); // Minimiert CPU-Belastung, aber ist noch kein Spin-Waiting
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ReleaseLock()
-        {
-            Volatile.Write(ref spinLock, 0);
-        }
-
         public void Wait()
         {
             while (true)
             {
-                AcquireLock();
-                if (currentCount > 0)
+                int oldCount = count;
+                if (count > 0 && Interlocked.CompareExchange(ref count, oldCount - 1, oldCount) == oldCount)
                 {
-                    currentCount--;
-                    ReleaseLock();
-                    break;
+                    return;
                 }
-                ReleaseLock();
-                Thread.Sleep(1); // Minimale Blockierung, um CPU zu entlasten, kein Spin-Waiting
+
+                Thread.Yield();
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Release()
         {
-            AcquireLock();
-            if (currentCount < maxCount)
+            if (count >= maxCount)
             {
-                currentCount++;
+                throw new SemaphoreFullException("Semaphore already at maximum count.");
             }
-            else
-            {
-                throw new InvalidOperationException("Semaphore released too many times");
-            }
-            ReleaseLock();
+
+            Interlocked.Increment(ref count);
         }
     }
 }
