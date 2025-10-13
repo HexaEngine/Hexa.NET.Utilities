@@ -8,15 +8,7 @@
     {
         private static unsafe void Main(string[] args)
         {
-            int[] array = { 10, 7, 8, 9, 1, 5 };
-            int length = array.Length;
-
-            fixed (int* ptr = array)
-            {
-                Utils.QSort(ptr, length, (a, b) => a.CompareTo(b)); // Default integer comparison
-            }
-
-            //var summary = BenchmarkRunner.Run<UnsafeDictionaryBenchmark>();
+            var summary = BenchmarkRunner.Run<UnsafeDictionaryBenchmark>();
             //var summary = BenchmarkRunner.Run<UnsafeListBenchmark>();
             /*
              UnsafeDictionaryBenchmark benchmark = new();
@@ -89,6 +81,7 @@
             // worst case scenario benchmark using linear keys where the hash code of int is always the value of itself.
 
             private UnsafeDictionary<int, int> _unsafeDict;   // about 29% faster and saves 7 bytes per entry and has a way lower Std-dev.
+            private HashMap<int, int> _hashMap;
             private Dictionary<int, int> _managedDict = new();
             private int iterationIndex = 0;
 
@@ -97,6 +90,7 @@
             {
                 iterationIndex = 0;
                 _unsafeDict.Clear();
+                _hashMap.Clear();
                 _managedDict.Clear();
             }
 
@@ -107,6 +101,16 @@
                 if (_unsafeDict.Count > 100000)
                 {
                     _unsafeDict.Clear();
+                }
+            }
+
+            [Benchmark]
+            public void AddHashMap()
+            {
+                _hashMap.Add(iterationIndex++, 2); // Add elements to the managed list
+                if (_hashMap.Count > 100000)
+                {
+                    _hashMap.Clear();
                 }
             }
 

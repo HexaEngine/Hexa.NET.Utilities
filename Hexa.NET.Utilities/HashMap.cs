@@ -223,6 +223,10 @@
         private int size;
         private nint equals;
 
+        public int Count => size;
+
+        public int Capacity => capacity;
+
         private static void RehashMoveRow(in Columns src, in Columns dst, int newCapacity)
         {
             var tag = *src.tags;
@@ -358,6 +362,17 @@
             }
 
             capacity = 0;
+            size = 0;
+        }
+
+        public void Clear()
+        {
+            if (tags == null)
+            {
+                return;
+            }
+            var tagsInBytes = (nuint)(capacity * sizeof(Tag));
+            NativeMemory.Clear(tags, tagsInBytes);
             size = 0;
         }
     }
