@@ -5,30 +5,27 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<LangVersion>12</LangVersion>
-
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		
+		<LangVersion>13</LangVersion>
+		
 		<IsAotCompatible>true</IsAotCompatible>
 		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
 		<EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
 		<EnableAotAnalyzer>true</EnableAotAnalyzer>
-	</PropertyGroup>
-
-	<PropertyGroup>
+		
 		<PackageId>Hexa.NET.Utilities</PackageId>
 		<AssemblyVersion>1.0.0</AssemblyVersion>
-		<PackageVersion>2.2.3</PackageVersion>
-		<Authors>Juna</Authors>
-		<AssemblyName>Hexa.NET.Utilities</AssemblyName>
+		<PackageVersion>2.2.4</PackageVersion>
+		<Description>The utilities library for HexaEngine.</Description>
+		<PackageTags>HexaEngine Hexa HexaGen C# .NET DotNet Sharp Windows macOS Native</PackageTags>
+		<Authors>Juna Meinhold</Authors>
+		<Copyright>Copyright (c) 2024 Juna Meinhold</Copyright>
 		<PackageProjectUrl>https://github.com/HexaEngine/Hexa.NET.Utilities</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/HexaEngine/Hexa.NET.Utilities</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<Description>The utilities library for HexaEngine.</Description>
-		<PackageTags>HexaEngine Hexa HexaGen C# .NET DotNet Sharp Windows macOS Native</PackageTags>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
 
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>$(NoWarn);1591</NoWarn>
@@ -37,8 +34,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Content Include="../LICENSE.txt" Pack="true" PackagePath="\" />
-		<Content Include="../README.md" Pack="true" PackagePath="\" />
+		<None Include="../LICENSE.txt" Pack="true" PackagePath="\" />
+		<None Include="../README.md" Pack="true" PackagePath="\" />
+		<None Include="..\icon.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1' or '$(TargetFramework)' == 'netstandard2.0'">

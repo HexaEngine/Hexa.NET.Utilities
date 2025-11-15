@@ -8,7 +8,17 @@
     {
         private static unsafe void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<UnsafeDictionaryBenchmark>();
+            HashMap<int, int> map = default;
+            for (int j = 0; j < 100; ++j)
+            {
+                for (int i = 0; i < 1000000; ++i)
+                {
+                    map.Add(i, 2);
+                }
+                map.Clear();
+            }
+            map.Release();
+            //var summary = BenchmarkRunner.Run<UnsafeDictionaryBenchmark>();
             //var summary = BenchmarkRunner.Run<UnsafeListBenchmark>();
             /*
              UnsafeDictionaryBenchmark benchmark = new();

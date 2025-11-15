@@ -7,6 +7,7 @@
     using System.Text;
 
 #if NET5_0_OR_GREATER
+
     /// <summary>
     /// Helper class to work with the hidden C# Feature TypedReference.
     /// </summary>
@@ -1045,8 +1046,7 @@
                 switch (codePoint)
                 {
                     case <= 0x7F:
-                        *utf8Bytes = (byte)codePoint;
-                        utf8Bytes++;
+                        *utf8Bytes++ = (byte)codePoint;
                         break;
 
                     case <= 0x7FF:
@@ -1054,10 +1054,8 @@
                         if (utf8Bytes + 1 >= utf8BytesEnd)
                             return 0;
 
-                        *utf8Bytes = (byte)(0xC0 | (codePoint >> 6));
-                        utf8Bytes++;
-                        *utf8Bytes = (byte)(0x80 | (codePoint & 0x3F));
-                        utf8Bytes++;
+                        *utf8Bytes++ = (byte)(0xC0 | (codePoint >> 6));
+                        *utf8Bytes++ = (byte)(0x80 | (codePoint & 0x3F));
                         break;
 
                     case >= 0xD800 and <= 0xDBFF:
@@ -1073,14 +1071,10 @@
                                 if (utf8Bytes + 3 >= utf8BytesEnd)
                                     return 0;
 
-                                *utf8Bytes = (byte)(0xF0 | (codePointSurrogate >> 18));
-                                utf8Bytes++;
-                                *utf8Bytes = (byte)(0x80 | ((codePointSurrogate >> 12) & 0x3F));
-                                utf8Bytes++;
-                                *utf8Bytes = (byte)(0x80 | ((codePointSurrogate >> 6) & 0x3F));
-                                utf8Bytes++;
-                                *utf8Bytes = (byte)(0x80 | (codePointSurrogate & 0x3F));
-                                utf8Bytes++;
+                                *utf8Bytes++ = (byte)(0xF0 | (codePointSurrogate >> 18));
+                                *utf8Bytes++ = (byte)(0x80 | ((codePointSurrogate >> 12) & 0x3F));
+                                *utf8Bytes++ = (byte)(0x80 | ((codePointSurrogate >> 6) & 0x3F));
+                                *utf8Bytes++ = (byte)(0x80 | (codePointSurrogate & 0x3F));
 
                                 // Skip the low surrogate as it has already been processed
                                 i++;
@@ -1095,12 +1089,9 @@
                         if (utf8Bytes + 2 >= utf8BytesEnd)
                             return 0;
 
-                        *utf8Bytes = (byte)(0xE0 | (codePoint >> 12));
-                        utf8Bytes++;
-                        *utf8Bytes = (byte)(0x80 | ((codePoint >> 6) & 0x3F));
-                        utf8Bytes++;
-                        *utf8Bytes = (byte)(0x80 | (codePoint & 0x3F));
-                        utf8Bytes++;
+                        *utf8Bytes++ = (byte)(0xE0 | (codePoint >> 12));
+                        *utf8Bytes++ = (byte)(0x80 | ((codePoint >> 6) & 0x3F));
+                        *utf8Bytes++ = (byte)(0x80 | (codePoint & 0x3F));
                         break;
                 }
             }
