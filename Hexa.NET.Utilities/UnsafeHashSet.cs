@@ -10,14 +10,14 @@
 #endif
         where T : unmanaged
     {
-        private enum EntryFlags : byte
+        public enum EntryFlags : byte
         {
             Empty = 0,
             Tombstone = 1,
             Filled = 2
         }
 
-        private struct Entry
+        public struct Entry
         {
             public uint HashCode;
             public T Value;
@@ -267,6 +267,45 @@
 
             size++;
             return true;
+        }
+
+        public struct ResultPair
+        {
+            public bool Added;
+            public Entry* Entry;
+
+            public ResultPair(bool added, Entry* entry)
+            {
+                Added = added;
+                Entry = entry;
+            }
+        }
+
+        public ResultPair AddIt(T value)
+        {
+            EnsureCapacity(size + 1);
+
+            uint hashCode = (uint)value.GetHashCode();
+
+            Entry* entry = FindEntry(buckets, capacity, value, hashCode);
+
+            if (entry->IsFilled)
+            {
+                return new(false, entry);
+            }
+
+            entry->HashCode = hashCode;
+            entry->Value = value;
+            entry->Flags = EntryFlags.Filled;
+
+            size++;
+            return new(true, entry);
+        }
+
+        public readonly Entry* At(T value)
+        {
+            uint hashCode = (uint)value.GetHashCode();
+            return FindEntry(buckets, capacity, value, hashCode);
         }
 
         public bool AddIfNotPresent(T value, out int location)
