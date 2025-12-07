@@ -1375,5 +1375,70 @@
 
             return -1;
         }
+
+        /// <summary>
+        /// Compares two blocks of memory and returns an integer indicating their relative order.
+        /// </summary>
+        /// <remarks>This method performs a byte-by-byte comparison of the specified memory regions. It
+        /// does not check for overlapping memory or null pointers; callers must ensure that the pointers and length are
+        /// valid and that the memory regions do not overlap.</remarks>
+        /// <param name="ptr1">A pointer to the first block of memory to compare.</param>
+        /// <param name="ptr2">A pointer to the second block of memory to compare.</param>
+        /// <param name="length">The number of bytes to compare between the two memory blocks.</param>
+        /// <returns>A value less than zero if the first differing byte in ptr1 is less than that in ptr2; zero if all bytes are
+        /// equal; or a value greater than zero if the first differing byte in ptr1 is greater than that in ptr2.</returns>
+        public static int Memcmp(byte* ptr1, byte* ptr2, nuint length)
+        {
+            nuint chunks = length >> 3;
+
+            ulong* longPtr1 = (ulong*)ptr1;
+            ulong* longPtr2 = (ulong*)ptr2;
+            ulong* endLongPtr1 = longPtr1 + chunks;
+
+            while (longPtr1 < endLongPtr1)
+            {
+                if (*longPtr1 != *longPtr2)
+                {
+                    break;
+                }
+                ++longPtr1;
+                ++longPtr2;
+            }
+
+            byte* endPtr1 = ptr1 + length;
+            ptr1 = (byte*)longPtr1;
+            ptr2 = (byte*)longPtr2;
+
+            while (ptr1 < endPtr1)
+            {
+                if (*ptr1 != *ptr2)
+                {
+                    return *ptr1 - *ptr2;
+                }
+                ++ptr1;
+                ++ptr2;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Compares two blocks of unmanaged memory for equality over a specified number of elements of type
+        /// <typeparamref name="T"/>.
+        /// </summary>
+        /// <remarks>This method performs a byte-wise comparison of the memory regions pointed to by
+        /// <paramref name="ptr1"/> and <paramref name="ptr2"/>. The comparison covers <paramref name="length"/>
+        /// elements of type <typeparamref name="T"/>. The caller is responsible for ensuring that both memory regions
+        /// are valid and at least <paramref name="length"/> elements long.</remarks>
+        /// <typeparam name="T">The unmanaged value type of the elements to compare.</typeparam>
+        /// <param name="ptr1">A pointer to the first block of memory containing elements of type <typeparamref name="T"/>.</param>
+        /// <param name="ptr2">A pointer to the second block of memory containing elements of type <typeparamref name="T"/>.</param>
+        /// <param name="length">The number of elements of type <typeparamref name="T"/> to compare.</param>
+        /// <returns>An integer less than zero if the first block is less than the second; zero if the blocks are equal; greater
+        /// than zero if the first block is greater than the second.</returns>
+        public static int MemcmpT<T>(T* ptr1, T* ptr2, nuint length) where T : unmanaged
+        {
+            return Memcmp((byte*)ptr1, (byte*)ptr2, length * (nuint)sizeof(T));
+        }
     }
 }

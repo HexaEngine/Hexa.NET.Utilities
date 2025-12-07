@@ -64,7 +64,7 @@
             return lo | (hi << 32);
         }
 
-        public static void HashCore(byte* data, int length, byte* hash, uint seed = 0)
+        public static void HashCore(byte* data, nuint length, byte* hash, uint seed = 0)
         {
             unchecked
             {
@@ -74,12 +74,12 @@
                 ulong h1 = seed;
                 ulong h2 = seed;
 
-                int nblocks = length / 16;
+                nuint nblocks = length / 16;
 
                 // body
-                for (int i = 0; i < nblocks; ++i)
+                for (nuint i = 0; i < nblocks; ++i)
                 {
-                    int offset = i * 16;
+                    nuint offset = i * 16;
                     ulong k1 = ReadUInt64LE(data + offset);
                     ulong k2 = ReadUInt64LE(data + offset + 8);
 
@@ -101,16 +101,16 @@
                 }
 
                 // tail
-                int tailIndex = nblocks * 16;
+                nuint tailIndex = nblocks * 16;
                 ulong k1Tail = 0;
                 ulong k2Tail = 0;
-                int tailLen = length & 15;
+                nuint tailLen = length & 15;
 
                 if (tailLen > 0)
                 {
                     // process in little-endian order
                     // we reconstruct k1Tail and k2Tail from remaining bytes
-                    for (int i = tailLen - 1; i >= 0; --i)
+                    for (nuint i = tailLen - 1; i >= 0; --i)
                     {
                         byte b = data[tailIndex + i];
                         if (i >= 8)
@@ -168,7 +168,7 @@
             fixed (byte* dataPtr = data)
             fixed (byte* hashPtr = hash)
             {
-                HashCore(dataPtr, data.Length, hashPtr, seed);
+                HashCore(dataPtr, (nuint)data.Length, hashPtr, seed);
             }
         }
 
@@ -177,7 +177,7 @@
             Hash(MemoryMarshal.AsBytes(text), hash, seed);
         }
 
-        public static ulong Hash64(byte* data, int length, uint seed = 0)
+        public static ulong Hash64(byte* data, nuint length, uint seed = 0)
         {
             byte* hash = stackalloc byte[16];
             HashCore(data, length, hash, seed);

@@ -10,9 +10,9 @@
     public unsafe struct StringSpan : IEquatable<StringSpan>, IEnumerable<byte>
     {
         public byte* Ptr;
-        public int Length;
+        public nuint Length;
 
-        public StringSpan(byte* pointer, int length)
+        public StringSpan(byte* pointer, nuint length)
         {
             Ptr = pointer;
             Length = length;
@@ -59,7 +59,7 @@
         /// </summary>
         public readonly Span<byte> AsSpan()
         {
-            return new Span<byte>(Ptr, Length);
+            return new Span<byte>(Ptr, (int)Length);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@
         /// </summary>
         public readonly ReadOnlySpan<byte> AsReadOnlySpan()
         {
-            return new ReadOnlySpan<byte>(Ptr, Length);
+            return new ReadOnlySpan<byte>(Ptr, (int)Length);
         }
 
         /// <summary>
@@ -76,7 +76,7 @@
         /// <param name="start">The index at which to begin the slice.</param>
         /// <returns>A span that consists of all elements from start to the end of the span.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly StringSpan Slice(int start)
+        public readonly StringSpan Slice(nuint start)
         {
 #if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)start, (uint)Length);
@@ -94,7 +94,7 @@
         /// <param name="length">The desired length for the slice.</param>
         /// <returns>A span that consists of length elements from the current span starting at start.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly StringSpan Slice(int start, int length)
+        public readonly StringSpan Slice(nuint start, nuint length)
         {
 #if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)start, (uint)Length);
@@ -113,9 +113,9 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void CopyTo(Span<byte> destination)
         {
-            if (Length > destination.Length)
+            if (Length > (nuint)destination.Length)
                 throw new ArgumentException("Destination too short.", nameof(destination));
-            
+
             AsSpan().CopyTo(destination);
         }
 
@@ -127,9 +127,9 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool TryCopyTo(Span<byte> destination)
         {
-            if (Length > destination.Length)
+            if (Length > (nuint)destination.Length)
                 return false;
-            
+
             AsSpan().CopyTo(destination);
             return true;
         }
@@ -288,7 +288,7 @@
         /// </summary>
         public readonly void ToLowerInPlace()
         {
-            for (int i = 0; i < Length; i++)
+            for (nuint i = 0; i < Length; i++)
             {
                 Ptr[i] = Utils.ToLower(Ptr[i]);
             }
@@ -299,7 +299,7 @@
         /// </summary>
         public readonly void ToUpperInPlace()
         {
-            for (int i = 0; i < Length; i++)
+            for (nuint i = 0; i < Length; i++)
             {
                 Ptr[i] = Utils.ToUpper(Ptr[i]);
             }
@@ -311,8 +311,8 @@
         /// <returns>A trimmed string span.</returns>
         public readonly StringSpan Trim()
         {
-            int start = 0;
-            int end = Length - 1;
+            nuint start = 0;
+            nuint end = Length - 1;
 
             while (start < Length && IsWhitespace(Ptr[start]))
                 start++;
@@ -320,7 +320,7 @@
             while (end >= start && IsWhitespace(Ptr[end]))
                 end--;
 
-            int newLength = end - start + 1;
+            nuint newLength = end - start + 1;
             return newLength <= 0 ? new StringSpan(null, 0) : new StringSpan(Ptr + start, newLength);
         }
 
@@ -330,7 +330,7 @@
         /// <returns>A trimmed string span.</returns>
         public readonly StringSpan TrimStart()
         {
-            int start = 0;
+            nuint start = 0;
             while (start < Length && IsWhitespace(Ptr[start]))
                 start++;
 
@@ -343,11 +343,11 @@
         /// <returns>A trimmed string span.</returns>
         public readonly StringSpan TrimEnd()
         {
-            int end = Length - 1;
+            nuint end = Length - 1;
             while (end >= 0 && IsWhitespace(Ptr[end]))
                 end--;
 
-            int newLength = end + 1;
+            nuint newLength = end + 1;
             return newLength <= 0 ? new StringSpan(null, 0) : new StringSpan(Ptr, newLength);
         }
 
@@ -357,14 +357,14 @@
             return b == ' ' || b == '\t' || b == '\n' || b == '\r';
         }
 
-        public readonly override bool Equals(object? obj)
+        public override readonly bool Equals(object? obj)
         {
             return obj is StringSpan span && Equals(span);
         }
 
         public readonly bool Equals(StringSpan other)
         {
-            return Length == other.Length && StrNCmp(Ptr, other.Ptr, Length) == 0;
+            return Length == other.Length && StrNCmp(Ptr, other.Ptr, (int)Length) == 0;
         }
 
         /// <summary>
@@ -392,7 +392,7 @@
 
         public override readonly string ToString()
         {
-            return Encoding.UTF8.GetString(Ptr, Length);
+            return Encoding.UTF8.GetString(Ptr, (int)Length);
         }
 
         /// <summary>
@@ -414,14 +414,14 @@
         public struct Enumerator : IEnumerator<byte>
         {
             private readonly byte* pointer;
-            private readonly int length;
-            private int currentIndex;
+            private readonly nuint length;
+            private nuint currentIndex;
 
             internal Enumerator(StringSpan span)
             {
                 pointer = span.Ptr;
                 length = span.Length;
-                currentIndex = -1;
+                currentIndex = unchecked((nuint)(-1));
             }
 
             /// <inheritdoc/>
@@ -448,7 +448,7 @@
             /// <inheritdoc/>
             public void Reset()
             {
-                currentIndex = -1;
+                currentIndex = unchecked((nuint)(-1));
             }
         }
     }
