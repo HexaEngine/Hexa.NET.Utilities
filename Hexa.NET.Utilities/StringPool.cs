@@ -14,7 +14,7 @@ namespace Hexa.NET.Utilities
             byte* ptr = (byte*)allocator.Alloc(length, 1);
             span.CopyTo(new Span<byte>(ptr, span.Length));
             ptr[span.Length] = 0;
-            StringSpan stringSpan = new(ptr, (int)length - 1);
+            StringSpan stringSpan = new(ptr, length - 1);
             var res = strings.AddIt(stringSpan);
             if (!res.Added)
             {
