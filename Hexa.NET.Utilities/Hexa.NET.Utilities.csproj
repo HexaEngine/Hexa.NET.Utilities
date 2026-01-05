@@ -15,7 +15,7 @@
 		
 		<PackageId>Hexa.NET.Utilities</PackageId>
 		<AssemblyVersion>1.0.0</AssemblyVersion>
-		<PackageVersion>2.2.6</PackageVersion>
+		<PackageVersion>2.2.8</PackageVersion>
 		<Description>The utilities library for HexaEngine.</Description>
 		<PackageTags>HexaEngine Hexa HexaGen C# .NET DotNet Sharp Windows macOS Native</PackageTags>
 		<Authors>Juna Meinhold</Authors>

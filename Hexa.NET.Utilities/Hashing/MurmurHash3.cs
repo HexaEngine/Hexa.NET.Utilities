@@ -144,8 +144,8 @@
                 }
 
                 // finalization
-                h1 ^= (ulong)length;
-                h2 ^= (ulong)length;
+                h1 ^= length;
+                h2 ^= length;
 
                 h1 += h2;
                 h2 += h1;
