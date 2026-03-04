@@ -110,7 +110,7 @@
                 {
                     // process in little-endian order
                     // we reconstruct k1Tail and k2Tail from remaining bytes
-                    for (nuint i = tailLen - 1; i >= 0; --i)
+                    for (nuint i = tailLen; i-- > 0;)
                     {
                         byte b = data[tailIndex + i];
                         if (i >= 8)
