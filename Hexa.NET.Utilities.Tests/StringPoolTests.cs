@@ -1,4 +1,5 @@
 #if NET5_0_OR_GREATER
+
 namespace Hexa.NET.Utilities.Tests
 {
     using System;
@@ -22,9 +23,9 @@ namespace Hexa.NET.Utilities.Tests
             StringSpan result = pool.Take(testBytes);
 
             // Assert
-            Assert.That(result.Length, Is.EqualTo(testBytes.Length));
+            Assert.That(result.Length, Is.EqualTo((nuint)testBytes.Length));
             Assert.That(result.ToString(), Is.EqualTo(testString));
-            Assert.That((nint)result.Ptr, Is.Not.EqualTo(0));
+            Assert.That((nint)result.Ptr, Is.Not.EqualTo((nint)0));
 
             // Cleanup
             pool.Dispose();
@@ -41,8 +42,8 @@ namespace Hexa.NET.Utilities.Tests
             StringSpan result = pool.Take(testBytes);
 
             // Assert
-            Assert.That(result.Length, Is.EqualTo(0));
-            Assert.That((nint)result.Ptr, Is.Not.EqualTo(0));
+            Assert.That(result.Length, Is.EqualTo((nuint)0));
+            Assert.That((nint)result.Ptr, Is.Not.EqualTo((nint)0));
 
             // Cleanup
             pool.Dispose();
@@ -93,7 +94,7 @@ namespace Hexa.NET.Utilities.Tests
 
             // Assert
             Assert.That(results.Count, Is.EqualTo(testStrings.Length));
-            
+
             // Verify all strings are stored correctly
             for (int i = 0; i < testStrings.Length; i++)
             {
@@ -213,7 +214,7 @@ namespace Hexa.NET.Utilities.Tests
             StringSpan result = pool.Take(testBytes);
 
             // Assert
-            Assert.That(result.Length, Is.EqualTo(testBytes.Length));
+            Assert.That(result.Length, Is.EqualTo((nuint)testBytes.Length));
             Assert.That(result.ToString(), Is.EqualTo(largeString));
 
             // Cleanup
@@ -271,7 +272,7 @@ namespace Hexa.NET.Utilities.Tests
 
             // Assert
             Assert.That(results.Count, Is.EqualTo(stringCount));
-            
+
             // Verify a sample of strings
             for (int i = 0; i < stringCount; i += 100)
             {
@@ -409,7 +410,7 @@ namespace Hexa.NET.Utilities.Tests
             Assert.That(result[0], Is.EqualTo((byte)'P'));
             Assert.That(result.Contains((byte)'P'), Is.True);
             Assert.That(result.IndexOf((byte)'T'), Is.GreaterThanOrEqualTo(0));
-            
+
             byte[] propertyBytes = Encoding.UTF8.GetBytes("Property");
             Assert.That(result.StartsWith(propertyBytes), Is.True);
 
@@ -492,7 +493,7 @@ namespace Hexa.NET.Utilities.Tests
 
             // Assert
             Assert.That(results.Count, Is.EqualTo(singleChars.Length));
-            
+
             // All should be unique
             var uniquePointers = results.Select(r => (nint)r.Ptr).Distinct().ToList();
             Assert.That(uniquePointers.Count, Is.EqualTo(singleChars.Length));
@@ -501,7 +502,7 @@ namespace Hexa.NET.Utilities.Tests
             for (int i = 0; i < singleChars.Length; i++)
             {
                 Assert.That(results[i].ToString(), Is.EqualTo(singleChars[i].ToString()));
-                Assert.That(results[i].Length, Is.EqualTo(1));
+                Assert.That(results[i].Length, Is.EqualTo((nuint)1));
             }
 
             // Cleanup
@@ -574,4 +575,5 @@ namespace Hexa.NET.Utilities.Tests
         }
     }
 }
+
 #endif
