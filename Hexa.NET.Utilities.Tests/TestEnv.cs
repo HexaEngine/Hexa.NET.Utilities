@@ -2,11 +2,11 @@
 
 namespace Hexa.NET.Utilities.Tests
 {
-    [TestFixture]
-    public class ATestEnv
+    [SetUpFixture]
+    public class TestBootstrap
     {
-        [Test]
-        public void DumpPaths()
+        [OneTimeSetUp]
+        public void RunFirst()
         {
             Console.WriteLine($"CurrentDirectory: {Environment.CurrentDirectory}");
             Console.WriteLine($"BaseDirectory:    {AppContext.BaseDirectory}");
