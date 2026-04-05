@@ -29,12 +29,6 @@ jobs:
 
     - name: Build
       run: dotnet build
-
-    - name: Copy Dlls
-      shell: bash
-      run: |
-        mkdir -p Hexa.NET.Utilities.Tests/bin/Debug/net8.0
-        cp -r Hexa.NET.Utilities/runtimes Hexa.NET.Utilities.Tests/bin/Debug/net8.0/
-
+      
     - name: Run tests
       run: dotnet test
