@@ -202,21 +202,15 @@ namespace Hexa.NET.Utilities
             }
             else if (IsLinux)
             {
-                do
-                {
-                    var slot = GetWaitTableSlot(pAddress);
-                    var val = AtomicRead(slot);
-                    Syscall(SYS_futex, slot, (void*)FUTEX_WAIT, (void*)(nuint)val, null, null, null);
-                } while (AtomicRead(pAddress) == compare);
+                var slot = GetWaitTableSlot(pAddress);
+                var val = AtomicRead(slot);
+                Syscall(SYS_futex, slot, (void*)FUTEX_WAIT, (void*)(nuint)val, null, null, null);
             }
             else if (IsMacOS)
             {
-                do
-                {
-                    var slot = GetWaitTableSlot(pAddress);
-                    uint val = AtomicRead(slot);
-                    _ = ULockWait(UL_COMPARE_AND_WAIT | ULF_NO_ERRNO, slot, val, 0);
-                } while (AtomicRead(pAddress) == compare);
+                var slot = GetWaitTableSlot(pAddress);
+                uint val = AtomicRead(slot);
+                _ = ULockWait(UL_COMPARE_AND_WAIT | ULF_NO_ERRNO, slot, val, 0);
             }
             else
             {
