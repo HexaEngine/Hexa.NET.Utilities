@@ -1,80 +1,59 @@
-﻿#if NET7_0_OR_GREATER
-
+﻿using Hexa.NET.Utilities.Native;
 using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using ReaderWriterLock = Hexa.NET.Utilities.Native.ReaderWriterLock;
 
 namespace Hexa.NET.Utilities
 {
-    public struct ReaderWriterLockLight
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ReaderWriterLockLight
     {
-        private ulong state = 0;
-        private const ulong writerBit = 1ul << 63;
-        private const ulong readerMask = ~writerBit;
+        private ReaderWriterLock cLock;
 
         public ReaderWriterLockLight()
         {
+            HexaUtils.ReaderWriterLockInit((ReaderWriterLock*)Unsafe.AsPointer(ref cLock));
         }
 
         public void EnterRead()
         {
-            var value = Volatile.Read(ref state);
-            do
+            int result = HexaUtils.ReaderWriterLockLockRead((ReaderWriterLock*)Unsafe.AsPointer(ref cLock));
+            if (result == -1)
             {
-                if ((value & writerBit) != 0)
-                {
-                    do
-                    {
-                        WaitOnAddressHelper<ulong>.Wait(ref state, value);
-                        value = Volatile.Read(ref state);
-                    }
-                    while ((value & writerBit) != 0);
-                }
-                var wanted = value + 1;
-                if (wanted > readerMask)
-                {
-                    throw new InvalidOperationException("Too many concurrent readers");
-                }
-                var newValue = Interlocked.CompareExchange(ref state, wanted, value);
-                if (newValue == value)
-                {
-                    break;
-                }
-                value = newValue;
-            } while (true);
+                throw new OverflowException("Too many readers.");
+            }
+        }
+
+        public bool TryEnterRead()
+        {
+            int result = HexaUtils.ReaderWriterLockTryLockRead((ReaderWriterLock*)Unsafe.AsPointer(ref this));
+            if (result == -1)
+            {
+                throw new OverflowException("Too many readers.");
+            }
+            return result > 0;
         }
 
         public void ExitRead()
         {
-            Interlocked.Decrement(ref state);
-            WaitOnAddressHelper<ulong>.SignalAll(ref state); // We sadly cannot use SignalSingle here because if a writer is waiting and a reader too then the reader could steal the signal from the writer causing a deadlock.
+            HexaUtils.ReaderWriterLockUnlockRead((ReaderWriterLock*)Unsafe.AsPointer(ref this));
         }
 
         public void EnterWrite()
         {
-            ulong oldValue;
-            while (true)
-            {
-                oldValue = Interlocked.Or(ref state, writerBit);
-                if ((oldValue & writerBit) == 0)
-                {
-                    break;
-                }
-                WaitOnAddressHelper<ulong>.Wait(ref state, oldValue);
-            }
+            HexaUtils.ReaderWriterLockLockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref this));
+        }
 
-            while (((oldValue = Volatile.Read(ref state)) & readerMask) != 0)
-            {
-                WaitOnAddressHelper<ulong>.Wait(ref state, oldValue);
-            }
+        public bool TryEnterWrite(bool preserveWriterFairness = true)
+        {
+            return HexaUtils.ReaderWriterLockTryLockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref this), preserveWriterFairness) > 0;
         }
 
         public void ExitWrite()
         {
-            Interlocked.And(ref state, readerMask);
-            WaitOnAddressHelper<ulong>.SignalAll(ref state);
+            HexaUtils.ReaderWriterLockUnlockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref this));
         }
+
+#if NET7_0_OR_GREATER
 
         [UnscopedRef]
         public LockGuard AcquireReadLock() => new(ref this, false);
@@ -141,7 +120,7 @@ namespace Hexa.NET.Utilities
                 Unlock();
             }
         }
-    }
-}
 
 #endif
+    }
+}

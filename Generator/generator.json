@@ -1,0 +1,13 @@
+{
+  "Namespace": "Hexa.NET.Utilities.Native",
+  "ApiName": "HexaUtils",
+  "LibName": "HexaUtils",
+  "GenerateConstructorsForStructs": true,
+  "GeneratePlaceholderComments": false,
+  "GenerateMetadata": false,
+  "WrapPointersAsHandle": true,
+  "ImportType": "FunctionTable",
+  "TypeMappings": {
+  },
+  "Defines": [ "HEXA_UTILS_BUILD_SHARED=1" ]
+}

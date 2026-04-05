@@ -71,6 +71,16 @@ namespace Hexa.NET.Utilities
         }
     }
 
+    /// <summary>
+    /// Provides cross-platform wait/signal primitives that block on a memory address,
+    /// backed by <c>WaitOnAddress</c>/<c>WakeByAddress</c> on Windows, <c>futex</c> on Linux,
+    /// and <c>__ulock_wait</c>/<c>__ulock_wake</c> on macOS.
+    /// </summary>
+    /// <typeparam name="TValue">
+    /// The integer type to wait on. Must be one of <see cref="byte"/>, <see cref="sbyte"/>,
+    /// <see cref="short"/>, <see cref="ushort"/>, <see cref="int"/>, <see cref="uint"/>,
+    /// <see cref="long"/>, or <see cref="ulong"/>.
+    /// </typeparam>
     public unsafe static class WaitOnAddressHelper<TValue> where TValue : unmanaged, IEquatable<TValue>, INumber<TValue>, IBinaryNumber<TValue>, IComparisonOperators<TValue, TValue, bool>
     {
         private static readonly bool IsWindows = OperatingSystem.IsWindows();
@@ -190,6 +200,17 @@ namespace Hexa.NET.Utilities
             }
         }
 
+        /// <summary>
+        /// Blocks the current thread until the value at <paramref name="address"/> no longer equals <paramref name="compare"/>,
+        /// using OS-level wait primitives.
+        /// </summary>
+        /// <remarks>
+        /// This method may return spuriously — the OS primitive can wake the thread even when the value has not changed.
+        /// Callers must re-check the condition in a loop after this method returns.
+        /// </remarks>
+        /// <param name="address">A reference to the value to monitor.</param>
+        /// <param name="compare">The value the monitored location is expected to currently hold. The thread unblocks when the value changes.</param>
+        /// <exception cref="PlatformNotSupportedException">Thrown when the current operating system is not supported.</exception>
         public static void Wait(ref TValue address, in TValue compare)
         {
             TValue* pAddress = (TValue*)Unsafe.AsPointer(ref address);
@@ -218,6 +239,11 @@ namespace Hexa.NET.Utilities
             }
         }
 
+        /// <summary>
+        /// Wakes a single thread that is waiting on <paramref name="address"/>.
+        /// </summary>
+        /// <param name="address">A reference to the value that waiting threads are monitoring.</param>
+        /// <exception cref="PlatformNotSupportedException">Thrown when the current operating system is not supported.</exception>
         public static void SignalSingle(ref TValue address)
         {
             TValue* pAddress = (TValue*)Unsafe.AsPointer(ref address);
@@ -243,6 +269,11 @@ namespace Hexa.NET.Utilities
             }
         }
 
+        /// <summary>
+        /// Wakes all threads that are waiting on <paramref name="address"/>.
+        /// </summary>
+        /// <param name="address">A reference to the value that waiting threads are monitoring.</param>
+        /// <exception cref="PlatformNotSupportedException">Thrown when the current operating system is not supported.</exception>
         public static void SignalAll(ref TValue address)
         {
             TValue* pAddress = (TValue*)Unsafe.AsPointer(ref address);
