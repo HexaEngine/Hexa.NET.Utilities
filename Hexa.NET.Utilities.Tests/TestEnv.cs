@@ -2,16 +2,16 @@
 
 namespace Hexa.NET.Utilities.Tests
 {
-    [SetUpFixture]
+    [TestFixture]
     public class TestBootstrap
     {
-        [OneTimeSetUp]
+        [Test]
         public void RunFirst()
         {
-            Console.WriteLine($"CurrentDirectory: {Environment.CurrentDirectory}");
-            Console.WriteLine($"BaseDirectory:    {AppContext.BaseDirectory}");
-            Console.WriteLine($"Test Assembly:    {Assembly.GetExecutingAssembly().Location}");
-            Console.WriteLine($"Process Path:     {Environment.ProcessPath}");
+            Assert.Warn($"CurrentDirectory: {Environment.CurrentDirectory}");
+            Assert.Warn($"BaseDirectory:    {AppContext.BaseDirectory}");
+            Assert.Warn($"Test Assembly:    {Assembly.GetExecutingAssembly().Location}");
+            Assert.Warn($"Process Path:     {Environment.ProcessPath}");
         }
     }
 }
