@@ -1,4 +1,5 @@
 ﻿#if NET5_0_OR_GREATER
+
 namespace Hexa.NET.Utilities
 {
     using System.Runtime.CompilerServices;
@@ -41,7 +42,6 @@ namespace Hexa.NET.Utilities
                     {
                         return uint.MaxValue;
                     }
-
                 } while (Interlocked.CompareExchange(ref Used, newUsed, offset) != offset);
 
                 return alignedOffset;
@@ -59,7 +59,6 @@ namespace Hexa.NET.Utilities
                 return GetBasePointer(block) + offset;
             }
 
-
             public static void Destroy(MemoryBlock* block)
             {
                 NativeMemory.AlignedFree(GetBasePointer(block));
@@ -71,10 +70,10 @@ namespace Hexa.NET.Utilities
         private volatile MemoryBlock* freeList;
         private int token;
 
-        private bool AcquireLock(bool forceAcquire = false)
+        private bool AcquireRefillGate(bool forceAcquire = false)
         {
+            // Behavior is like if a mutex and a barrier had a baby.
             int failValue = forceAcquire ? 1 : 0;
-            // this is a refill lock, do not interpret it wrong.
             int toSet = 1;
             while (Interlocked.CompareExchange(ref token, toSet, 0) != 0)
             {
@@ -84,7 +83,7 @@ namespace Hexa.NET.Utilities
             return toSet == 1;
         }
 
-        private void ReleaseLock()
+        private void SignalRefillGate()
         {
             Interlocked.Exchange(ref token, 0);
         }
@@ -93,7 +92,7 @@ namespace Hexa.NET.Utilities
         {
             var oldTail = tail;
 
-            if (!AcquireLock())
+            if (!AcquireRefillGate())
             {
                 return tail;
             }
@@ -125,10 +124,8 @@ namespace Hexa.NET.Utilities
             }
             finally
             {
-
-                ReleaseLock();
+                SignalRefillGate();
             }
-
         }
 
         public void* Alloc(uint size, uint alignment = 8)
@@ -151,7 +148,7 @@ namespace Hexa.NET.Utilities
 
         public void Reset()
         {
-            AcquireLock(true);
+            AcquireRefillGate(true);
             try
             {
                 var curr = tail;
@@ -166,13 +163,13 @@ namespace Hexa.NET.Utilities
             }
             finally
             {
-                ReleaseLock();
+                SignalRefillGate();
             }
         }
 
         public void ReleaseAll()
         {
-            AcquireLock(true);
+            AcquireRefillGate(true);
             try
             {
                 DestroyList(tail);
@@ -183,7 +180,7 @@ namespace Hexa.NET.Utilities
             }
             finally
             {
-                ReleaseLock();
+                SignalRefillGate();
             }
         }
 
