@@ -1,17 +1,19 @@
 ﻿using System.Reflection;
+using NUnit.Framework;
 
 namespace Hexa.NET.Utilities.Tests
 {
     [TestFixture]
-    public class TestBootstrap
+    public class ATestEnv
     {
         [Test]
-        public void RunFirst()
+        public void DumpPaths()
         {
-            Assert.Warn($"CurrentDirectory: {Environment.CurrentDirectory}");
-            Assert.Warn($"BaseDirectory:    {AppContext.BaseDirectory}");
-            Assert.Warn($"Test Assembly:    {Assembly.GetExecutingAssembly().Location}");
-            Assert.Warn($"Process Path:     {Environment.ProcessPath}");
+            Assert.Fail(
+                $"CurrentDirectory: {Environment.CurrentDirectory}\n" +
+                $"BaseDirectory:    {AppContext.BaseDirectory}\n" +
+                $"Test Assembly:    {Assembly.GetExecutingAssembly().Location}\n" +
+                $"Process Path:     {Environment.ProcessPath}");
         }
     }
 }
