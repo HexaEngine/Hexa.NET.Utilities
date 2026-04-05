@@ -7,16 +7,16 @@ namespace Hexa.NET.Utilities
 {
     internal unsafe static class WaitOnAddressHelper
     {
-        [DllImport("API-MS-Win-Core-Synch-l1-2-0.dll")]
+        [DllImport("API-MS-Win-Core-Synch-l1-2-0.dll", EntryPoint = "WaitOnAddress")]
         public static extern bool WaitOnAddress(void* address, void* compareAddress, nuint size, uint milliseconds);
 
-        [DllImport("API-MS-Win-Core-Synch-l1-2-0.dll")]
+        [DllImport("API-MS-Win-Core-Synch-l1-2-0.dll", EntryPoint = "WakeByAddressSingle")]
         public static extern void WakeByAddressSingle(void* address);
 
-        [DllImport("API-MS-Win-Core-Synch-l1-2-0.dll")]
+        [DllImport("API-MS-Win-Core-Synch-l1-2-0.dll", EntryPoint = "WakeByAddressAll")]
         public static extern void WakeByAddressAll(void* address);
 
-        [DllImport("libc", SetLastError = true)]
+        [DllImport("libc", SetLastError = true, EntryPoint = "syscall")]
         public static extern nint Syscall(nint number, void* arg1, void* arg2, void* arg3, void* arg4, void* arg5, void* arg6);
 
         public static readonly nint SYS_futex =
