@@ -3,7 +3,7 @@
 namespace Hexa.NET.Utilities.Tests
 {
     [TestFixture]
-    public class TestEnv
+    public class ATestEnv
     {
         [Test]
         public void DumpPaths()
