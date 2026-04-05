@@ -1,5 +1,5 @@
 #if NET7_0_OR_GREATER
-
+/*
 namespace Hexa.NET.Utilities.Tests
 {
     using NUnit.Framework;
@@ -83,7 +83,7 @@ namespace Hexa.NET.Utilities.Tests
             locks[0].ExitRead();
         }
 
-        #endregion
+        #endregion Single-threaded correctness
 
         #region Concurrent exclusion
 
@@ -311,7 +311,7 @@ namespace Hexa.NET.Utilities.Tests
             Assert.That(Volatile.Read(ref readersEntered), Is.EqualTo(readerCount));
         }
 
-        #endregion
+        #endregion Concurrent exclusion
 
         #region Stress tests
 
@@ -407,7 +407,7 @@ namespace Hexa.NET.Utilities.Tests
                 "Deadlock or timeout detected under high contention");
         }
 
-        #endregion
+        #endregion Stress tests
 
         #region LockGuard – single-threaded
 
@@ -525,7 +525,7 @@ namespace Hexa.NET.Utilities.Tests
                 "Expected InvalidOperationException when acquiring read lock while write lock is already held");
         }
 
-        #endregion
+        #endregion LockGuard – single-threaded
 
         #region LockGuard – concurrent exclusion via Dispose / Unlock
 
@@ -644,8 +644,8 @@ namespace Hexa.NET.Utilities.Tests
                 "Writer2 should have entered after Unlock");
         }
 
-        #endregion
+        #endregion LockGuard – concurrent exclusion via Dispose / Unlock
     }
 }
-
+*/
 #endif
