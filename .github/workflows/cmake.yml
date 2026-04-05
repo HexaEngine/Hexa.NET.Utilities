@@ -1,0 +1,39 @@
+name: Build and Upload HexaUtils Artifacts
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    uses: JunaMeinhold/cmake-actions/.github/workflows/cmake.yml@v1.x.x
+    with:
+      lib-name: HexaUtils
+      repo: HexaEngine/Hexa.NET.Utilities.Native
+      repo-tag: 0.1.0.0
+      repo-path: HexaUtils
+      cmake-flags: -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON 
+      cmake-flags-windows: "-DCMAKE_SYSTEM_VERSION=10.0.26100.0"
+      ndk-version: "26.3.11579264"
+      android-api: "21"
+      build-output-dir: artifacts
+      bin-name-osx: libHexaUtils.dylib
+      bin-name-linux: libHexaUtils.so
+      bin-name-android: libHexaUtils.so
+      bin-name-windows: Release/HexaUtils.dll
+      bin-name-osx-normalized: libHexaUtils.dylib
+      bin-name-linux-normalized: libHexaUtils.so
+      bin-name-android-normalized: libHexaUtils.so
+      bin-name-windows-normalized: HexaUtils.dll
+
+      linux-deps: "build-essential cmake ccache"
+      macos-deps: "pkg-config"
+      android-deps: "build-essential cmake ninja-build"
+
+  create-pr:
+    uses: JunaMeinhold/cmake-actions/.github/workflows/create-pr.yml@v1.x.x
+    needs: [build]
+    with:
+      lib-name: HexaUtils
+      lib-version: 0.11.25
+      pr-branch: artifacts-branch
+      pr-base-branch: main
+      pr-reviewers: JunaMeinhold
