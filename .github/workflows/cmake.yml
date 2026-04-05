@@ -33,7 +33,7 @@ jobs:
     needs: [build]
     with:
       lib-name: HexaUtils
-      lib-version: 0.11.25
+      lib-version: 0.1.0.0
       pr-branch: artifacts-branch
       pr-base-branch: main
       pr-reviewers: JunaMeinhold
