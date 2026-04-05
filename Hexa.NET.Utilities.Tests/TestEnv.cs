@@ -9,7 +9,7 @@ namespace Hexa.NET.Utilities.Tests
         [Test]
         public void DumpPaths()
         {
-            Assert.Fail(
+            TestContext.Progress.WriteLine(
                 $"CurrentDirectory: {Environment.CurrentDirectory}\n" +
                 $"BaseDirectory:    {AppContext.BaseDirectory}\n" +
                 $"Test Assembly:    {Assembly.GetExecutingAssembly().Location}\n" +

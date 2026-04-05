@@ -1,5 +1,5 @@
 #if NET7_0_OR_GREATER
-/*
+
 namespace Hexa.NET.Utilities.Tests
 {
     using NUnit.Framework;
@@ -647,5 +647,5 @@ namespace Hexa.NET.Utilities.Tests
         #endregion LockGuard – concurrent exclusion via Dispose / Unlock
     }
 }
-*/
+
 #endif
