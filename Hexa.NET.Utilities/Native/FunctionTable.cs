@@ -21,9 +21,9 @@ namespace Hexa.NET.Utilities.Native
 		/// <summary>
 		/// Initializes the function table, automatically called. Do not call manually, only after <see cref="FreeApi"/>.
 		/// </summary>
-		public static void InitApi()
+		public static void InitApi(INativeContext context)
 		{
-			funcTable = new FunctionTable(LibraryLoader.LoadLibrary(GetLibraryName, null), 7);
+			funcTable = new FunctionTable(context, 7);
 			funcTable.Load(0, "ReaderWriterLock_Init");
 			funcTable.Load(1, "ReaderWriterLock_LockRead");
 			funcTable.Load(2, "ReaderWriterLock_TryLockRead");
