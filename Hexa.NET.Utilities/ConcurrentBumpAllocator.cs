@@ -1,4 +1,4 @@
-﻿#if NET5_0_OR_GREATER
+﻿#if NET7_0_OR_GREATER
 
 namespace Hexa.NET.Utilities
 {
@@ -7,32 +7,32 @@ namespace Hexa.NET.Utilities
 
     public unsafe struct ConcurrentBumpAllocator : IDisposable, IFreeable
     {
-        public const uint PageSize = 4096;
+        public const nuint PageSize = 4096;
 
         private struct MemoryBlock
         {
             public MemoryBlock* Next;
-            public uint Used;
-            public uint Size;
+            public nuint Used;
+            public nuint Size;
 
-            public MemoryBlock(MemoryBlock* next, uint size)
+            public MemoryBlock(MemoryBlock* next, nuint size)
             {
                 Next = next;
                 Size = size;
             }
 
-            public static MemoryBlock* Create(uint size, MemoryBlock* next)
+            public static MemoryBlock* Create(nuint size, MemoryBlock* next)
             {
-                size = AlignmentHelper.AlignUp(size + (uint)sizeof(MemoryBlock), PageSize);
+                size = AlignmentHelper.AlignUp(size + (nuint)sizeof(MemoryBlock), PageSize);
                 var mem = (byte*)NativeMemory.AlignedAlloc(size, PageSize) + size;
                 MemoryBlock* block = ((MemoryBlock*)mem) - 1;
-                *block = new(next, size - (uint)sizeof(MemoryBlock));
+                *block = new(next, size - (nuint)sizeof(MemoryBlock));
                 return block;
             }
 
-            public uint Alloc(uint size, uint alignment)
+            public nuint Alloc(nuint size, nuint alignment)
             {
-                uint offset, alignedOffset, newUsed;
+                nuint offset, alignedOffset, newUsed;
                 do
                 {
                     offset = Volatile.Read(ref Used);
@@ -40,7 +40,7 @@ namespace Hexa.NET.Utilities
                     newUsed = alignedOffset + size;
                     if (newUsed > Size)
                     {
-                        return uint.MaxValue;
+                        return nuint.MaxValue;
                     }
                 } while (Interlocked.CompareExchange(ref Used, newUsed, offset) != offset);
 
@@ -54,7 +54,7 @@ namespace Hexa.NET.Utilities
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static void* GetPointer(MemoryBlock* block, uint offset)
+            public static void* GetPointer(MemoryBlock* block, nuint offset)
             {
                 return GetBasePointer(block) + offset;
             }
@@ -65,19 +65,27 @@ namespace Hexa.NET.Utilities
             }
         }
 
-        private volatile MemoryBlock* head;
-        private volatile MemoryBlock* tail;
-        private volatile MemoryBlock* freeList;
+        private volatile MemoryBlock* bottom;
+        private volatile MemoryBlock* top;
+        private volatile MemoryBlock* freeListTop;
         private int token;
 
         private bool AcquireRefillGate(bool forceAcquire = false)
         {
-            // Behavior is like if a mutex and a barrier had a baby.
+            // A specialized spinlock for refilling.
+            // Reasoning: Using a normal mutex/futex would cause threads to serialize on this spot, even if the refill already happened.
+            // With this approach, only one thread will do the refill, but other threads wait and upon release, they will continue without each aquiring the refill lock.
+
+            // Used like:
+            // if (!AcquireRefillGate()) return
+            // <critical section> // only one thread will execute this, but others will wait for the refill to complete and then continue without entering the critical section
+            // SignalRefillGate();
+
             int failValue = forceAcquire ? 1 : 0;
             int toSet = 1;
             while (Interlocked.CompareExchange(ref token, toSet, 0) != 0)
             {
-                Thread.Yield();
+                Thread.SpinWait(10);
                 toSet = failValue;
             }
             return toSet == 1;
@@ -88,36 +96,36 @@ namespace Hexa.NET.Utilities
             Interlocked.Exchange(ref token, 0);
         }
 
-        private MemoryBlock* CreateBlock(uint sizeMin)
+        private MemoryBlock* CreateBlock(nuint sizeMin)
         {
-            var oldTail = tail;
+            var oldTail = top;
 
             if (!AcquireRefillGate())
             {
-                return tail;
+                return top;
             }
             try
             {
                 MemoryBlock* block;
-                if (tail != oldTail)
+                if (top != oldTail)
                 {
-                    return tail;
+                    return top;
                 }
 
-                if (freeList != null)
+                if (freeListTop != null)
                 {
-                    block = freeList;
-                    freeList = freeList->Next;
-                    block->Next = tail;
-                    tail = block;
+                    block = freeListTop;
+                    freeListTop = freeListTop->Next;
+                    block->Next = top;
+                    top = block;
                     return block;
                 }
 
-                block = MemoryBlock.Create(Math.Max(sizeMin, PageSize), tail);
-                tail = block;
-                if (head == null)
+                block = MemoryBlock.Create(Math.Max(sizeMin, PageSize), top);
+                top = block;
+                if (bottom == null)
                 {
-                    head = block;
+                    bottom = block;
                 }
 
                 return block;
@@ -128,15 +136,20 @@ namespace Hexa.NET.Utilities
             }
         }
 
-        public void* Alloc(uint size, uint alignment = 8)
+        public T* Alloc<T>(nuint count, nuint alignment) where T : unmanaged
+        {
+            return (T*)Alloc(count * (nuint)sizeof(T), alignment);
+        }
+
+        public void* Alloc(nuint size, nuint alignment = 8)
         {
             while (true)
             {
-                var currentTail = tail;
+                var currentTail = top;
                 if (currentTail != null)
                 {
                     var offs = currentTail->Alloc(size, alignment);
-                    if (offs != uint.MaxValue)
+                    if (offs != nuint.MaxValue)
                     {
                         return MemoryBlock.GetPointer(currentTail, offs);
                     }
@@ -146,42 +159,43 @@ namespace Hexa.NET.Utilities
             }
         }
 
+        /// <summary>
+        /// Resets the allocator to its initial state, clearing all allocated elements and preparing the structure for
+        /// reuse.
+        /// </summary>
+        /// <remarks>
+        /// This method is <strong>not thread-safe</strong> and should be called when no other threads are accessing the allocator.
+        /// </remarks>
         public void Reset()
         {
-            AcquireRefillGate(true);
-            try
+            var curr = top;
+            while (curr != null)
             {
-                var curr = tail;
-                while (curr != null)
-                {
-                    curr->Used = 0;
-                    curr = curr->Next;
-                }
-                freeList = tail;
-                tail = null;
-                head = null;
+                curr->Used = 0;
+                curr = curr->Next;
             }
-            finally
+            if (bottom != null)
             {
-                SignalRefillGate();
+                bottom->Next = freeListTop;
             }
+            freeListTop = top;
+            top = null;
+            bottom = null;
         }
 
+        /// <summary>
+        /// Releases all resources held by the current instance and resets its internal state.
+        /// </summary>
+        /// <remarks>
+        /// This method is <strong>not thread-safe</strong> and should be called when no other threads are accessing the allocator.
+        /// </remarks>
         public void ReleaseAll()
         {
-            AcquireRefillGate(true);
-            try
-            {
-                DestroyList(tail);
-                DestroyList(freeList);
-                tail = null;
-                head = null;
-                freeList = null;
-            }
-            finally
-            {
-                SignalRefillGate();
-            }
+            DestroyList(top);
+            DestroyList(freeListTop);
+            top = null;
+            bottom = null;
+            freeListTop = null;
         }
 
         private static void DestroyList(MemoryBlock* curr)

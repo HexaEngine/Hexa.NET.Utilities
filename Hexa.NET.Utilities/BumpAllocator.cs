@@ -1,4 +1,5 @@
 ﻿#if NET5_0_OR_GREATER
+
 namespace Hexa.NET.Utilities
 {
     using System.Runtime.CompilerServices;
@@ -6,37 +7,37 @@ namespace Hexa.NET.Utilities
 
     public unsafe struct BumpAllocator : IDisposable, IFreeable
     {
-        public const uint PageSize = 4096;
+        public const nuint PageSize = 4096;
 
         private struct MemoryBlock
         {
             public MemoryBlock* Next;
-            public uint Used;
-            public uint Size;
+            public nuint Used;
+            public nuint Size;
 
-            public MemoryBlock(MemoryBlock* next, uint size)
+            public MemoryBlock(MemoryBlock* next, nuint size)
             {
                 Next = next;
                 Size = size;
             }
 
-            public static MemoryBlock* Create(uint size, MemoryBlock* next)
+            public static MemoryBlock* Create(nuint size, MemoryBlock* next)
             {
-                size = AlignmentHelper.AlignUp(size + (uint)sizeof(MemoryBlock), PageSize);
+                size = AlignmentHelper.AlignUp(size + (nuint)sizeof(MemoryBlock), PageSize);
                 var mem = (byte*)NativeMemory.AlignedAlloc(size, PageSize) + size;
                 MemoryBlock* block = ((MemoryBlock*)mem) - 1;
-                *block = new(next, size - (uint)sizeof(MemoryBlock));
+                *block = new(next, size - (nuint)sizeof(MemoryBlock));
                 return block;
             }
 
-            public uint Alloc(uint size, uint alignment)
+            public nuint Alloc(nuint size, nuint alignment)
             {
                 var offset = Used;
                 var alignedOffset = AlignmentHelper.AlignUp(offset, alignment);
                 var newUsed = alignedOffset + size;
                 if (newUsed > Size)
                 {
-                    return uint.MaxValue;
+                    return nuint.MaxValue;
                 }
                 Used = newUsed;
                 return alignedOffset;
@@ -49,11 +50,10 @@ namespace Hexa.NET.Utilities
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static void* GetPointer(MemoryBlock* block, uint offset)
+            public static void* GetPointer(MemoryBlock* block, nuint offset)
             {
                 return GetBasePointer(block) + offset;
             }
-
 
             public static void Destroy(MemoryBlock* block)
             {
@@ -61,44 +61,47 @@ namespace Hexa.NET.Utilities
             }
         }
 
-        private MemoryBlock* head;
-        private MemoryBlock* tail;
-        private MemoryBlock* freeList;
+        private MemoryBlock* bottom;
+        private MemoryBlock* top;
+        private MemoryBlock* freeListTop;
 
-
-        private MemoryBlock* CreateBlock(uint sizeMin)
+        private MemoryBlock* CreateBlock(nuint sizeMin)
         {
             MemoryBlock* block;
 
-            if (freeList != null)
+            if (freeListTop != null)
             {
-                block = freeList;
-                freeList = freeList->Next;
-                block->Next = tail;
-                tail = block;
+                block = freeListTop;
+                freeListTop = freeListTop->Next;
+                block->Next = top;
+                top = block;
                 return block;
             }
 
-            block = MemoryBlock.Create(Math.Max(sizeMin, PageSize), tail);
-            tail = block;
-            if (head == null)
+            block = MemoryBlock.Create(Math.Max(sizeMin, PageSize), top);
+            top = block;
+            if (bottom == null)
             {
-                head = block;
+                bottom = block;
             }
 
             return block;
-
         }
 
-        public void* Alloc(uint size, uint alignment = 8)
+        public T* Alloc<T>(nuint count, nuint alignment) where T : unmanaged
+        {
+            return (T*)Alloc(count * (nuint)sizeof(T), alignment);
+        }
+
+        public void* Alloc(nuint size, nuint alignment = 8)
         {
             while (true)
             {
-                var currentTail = tail;
+                var currentTail = top;
                 if (currentTail != null)
                 {
                     var offs = currentTail->Alloc(size, alignment);
-                    if (offs != uint.MaxValue)
+                    if (offs != nuint.MaxValue)
                     {
                         return MemoryBlock.GetPointer(currentTail, offs);
                     }
@@ -108,36 +111,40 @@ namespace Hexa.NET.Utilities
             }
         }
 
-        public void Free(void* ptr, uint size)
+        public void Free(void* ptr, nuint size)
         {
-            var basePtr = MemoryBlock.GetBasePointer(tail);
-            var endPtr = basePtr + tail->Used;
+            var basePtr = MemoryBlock.GetBasePointer(top);
+            var endPtr = basePtr + top->Used;
             if ((byte*)ptr + size == endPtr)
             {
-                tail->Used -= size;
+                top->Used -= size;
             }
         }
 
         public void Reset()
         {
-            var curr = tail;
+            var curr = top;
             while (curr != null)
             {
                 curr->Used = 0;
                 curr = curr->Next;
             }
-            freeList = tail;
-            tail = null;
-            head = null;
+            if (bottom != null)
+            {
+                bottom->Next = freeListTop;
+            }
+            freeListTop = top;
+            top = null;
+            bottom = null;
         }
 
         public void ReleaseAll()
         {
-            DestroyList(tail);
-            DestroyList(freeList);
-            tail = null;
-            head = null;
-            freeList = null;
+            DestroyList(top);
+            DestroyList(freeListTop);
+            top = null;
+            bottom = null;
+            freeListTop = null;
         }
 
         private static void DestroyList(MemoryBlock* curr)

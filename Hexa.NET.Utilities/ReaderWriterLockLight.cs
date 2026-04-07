@@ -25,7 +25,7 @@ namespace Hexa.NET.Utilities
 
         public bool TryEnterRead()
         {
-            int result = HexaUtils.ReaderWriterLockTryLockRead((ReaderWriterLock*)Unsafe.AsPointer(ref this));
+            int result = HexaUtils.ReaderWriterLockTryLockRead((ReaderWriterLock*)Unsafe.AsPointer(ref cLock));
             if (result == -1)
             {
                 throw new OverflowException("Too many readers.");
@@ -35,22 +35,22 @@ namespace Hexa.NET.Utilities
 
         public void ExitRead()
         {
-            HexaUtils.ReaderWriterLockUnlockRead((ReaderWriterLock*)Unsafe.AsPointer(ref this));
+            HexaUtils.ReaderWriterLockUnlockRead((ReaderWriterLock*)Unsafe.AsPointer(ref cLock));
         }
 
         public void EnterWrite()
         {
-            HexaUtils.ReaderWriterLockLockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref this));
+            HexaUtils.ReaderWriterLockLockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref cLock));
         }
 
         public bool TryEnterWrite(bool preserveWriterFairness = true)
         {
-            return HexaUtils.ReaderWriterLockTryLockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref this), preserveWriterFairness) > 0;
+            return HexaUtils.ReaderWriterLockTryLockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref cLock), preserveWriterFairness) > 0;
         }
 
         public void ExitWrite()
         {
-            HexaUtils.ReaderWriterLockUnlockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref this));
+            HexaUtils.ReaderWriterLockUnlockWrite((ReaderWriterLock*)Unsafe.AsPointer(ref cLock));
         }
 
 #if NET7_0_OR_GREATER
