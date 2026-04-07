@@ -128,7 +128,7 @@ namespace Hexa.NET.Utilities.Tests
         {
             // Arrange
             var allocator = new ConcurrentBumpAllocator();
-            uint largeSize = ConcurrentBumpAllocator.PageSize * 2;
+            var largeSize = ConcurrentBumpAllocator.PageSize * 2;
 
             // Act
             void* ptr = allocator.Alloc(largeSize);

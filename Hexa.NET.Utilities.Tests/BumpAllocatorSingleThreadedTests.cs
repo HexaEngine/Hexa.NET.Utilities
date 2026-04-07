@@ -1,4 +1,5 @@
 #if NET5_0_OR_GREATER
+
 namespace Hexa.NET.Utilities.Tests
 {
     using System;
@@ -127,7 +128,7 @@ namespace Hexa.NET.Utilities.Tests
         {
             // Arrange
             var allocator = new BumpAllocator();
-            uint largeSize = BumpAllocator.PageSize * 2;
+            var largeSize = BumpAllocator.PageSize * 2;
 
             // Act
             void* ptr = allocator.Alloc(largeSize);
@@ -347,7 +348,7 @@ namespace Hexa.NET.Utilities.Tests
         {
             // Arrange
             var allocator = new BumpAllocator();
-            
+
             // Allocate across multiple pages
             for (int i = 0; i < 5; i++)
             {
@@ -525,4 +526,5 @@ namespace Hexa.NET.Utilities.Tests
         }
     }
 }
+
 #endif
